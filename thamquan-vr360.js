@@ -237,8 +237,8 @@
   // ── Three.js State ──
   var renderer, scene, camera, sphereMesh, animId;
   var isInit = false;
-  var camLon = 180,
-    camLat = -16;
+  var camLon = 61.6,
+    camLat = -19.8;
       // ═══ COMPASS UI ═══
   var compassEl = document.getElementById("tq-compass");
   var compassNeedleEl = compassEl
@@ -265,7 +265,7 @@
   function updateCompass() {
     if (!compassEl || !compassNeedleEl) return;
 
-   var COMPASS_OFFSET = 180; 
+   var COMPASS_OFFSET = -266;
     var normalizedLon = (((camLon + COMPASS_OFFSET) % 360) + 360) % 360;
 
     // Nếu cần đảo chiều kim, đổi -normalizedLon thành normalizedLon
@@ -317,7 +317,7 @@
 
     scene = new THREE.Scene();
 
-var FOV_DESKTOP = 45;
+var FOV_DESKTOP = 55;
 var FOV_MOBILE = 60; // mobile nhìn rộng hơn, đỡ bị zoom quá gần
 
 camera = new THREE.PerspectiveCamera(
