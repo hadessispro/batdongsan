@@ -1,9 +1,43 @@
+<?php
+declare(strict_types=1);
+
+$secureCookie = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') === '443');
+if (PHP_VERSION_ID >= 70300) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => $secureCookie,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+} else {
+    session_set_cookie_params(0, '/; samesite=Lax', '', $secureCookie, true);
+}
+ini_set('session.use_strict_mode', '1');
+session_start();
+
+$basePath = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '')), '/');
+if ($basePath === '/' || $basePath === '.') {
+    $basePath = '';
+}
+$adminLoginUrl = ($basePath ?: '') . '/admin';
+$baseHref = ($basePath ?: '') . '/';
+
+header('X-Robots-Tag: noindex, nofollow', true);
+
+if (empty($_SESSION['bds_admin'])) {
+    header('Location: ' . $adminLoginUrl);
+    exit;
+}
+?>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Admin Panel — Bích Động Lakeside</title>
+<meta name="robots" content="noindex,nofollow"/>
+<base href="<?= htmlspecialchars($baseHref, ENT_QUOTES, 'UTF-8') ?>">
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
@@ -245,6 +279,7 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
     <div class="breadcrumb" id="breadcrumb">Admin / <b>Dashboard</b></div>
     <div class="header-actions">
       <a href="index.html" target="_blank" class="btn btn-sm"><i class="fa-solid fa-external-link-alt"></i> Xem Website</a>
+      <button type="button" class="btn btn-sm" onclick="logoutAdmin()"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</button>
     </div>
   </header>
 
@@ -517,7 +552,8 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
 // ═══════════════════════════════════════════════════════════
 
 var API_BASE = 'api/index.php';
-var JSON_RESOURCES = {
+var ADMIN_LOGIN_URL = <?= json_encode($adminLoginUrl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+  var JSON_RESOURCES = {
   'vr-hotspot-data.json': 'vr-hotspots',
   'vr_config.json': 'vr-config',
   'masterplan.json': 'masterplan',
@@ -745,6 +781,17 @@ function getVideoThumbOptions(selectedThumb) {
   if (!options.length) {
     return '<option value="">Chưa có ảnh thư viện</option>';
   }
+
+function logoutAdmin() {
+  fetch(apiUrl({ action: 'logout' }), {
+    method: 'POST',
+    credentials: 'same-origin'
+  }).catch(function() {
+    return null;
+  }).finally(function() {
+    window.location.href = ADMIN_LOGIN_URL;
+  });
+}
   return options.map(function(src) {
     return '<option value="' + escapeHtml(src) + '"' + (src === selected ? ' selected' : '') + '>' + escapeHtml(filenameFromPath(src)) + '</option>';
   }).join('');

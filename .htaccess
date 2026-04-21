@@ -1,3 +1,24 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  RewriteRule ^data/backups/ - [F,L,NC]
+  RewriteRule ^api/config\.local\.php$ - [F,L,NC]
+
+  RewriteCond %{THE_REQUEST} \s/+admin-login\.php[\s?] [NC]
+  RewriteRule ^admin-login\.php$ admin [R=302,L]
+
+  RewriteCond %{THE_REQUEST} \s/+admin\.php[\s?] [NC]
+  RewriteRule ^admin\.php$ admin/panel [R=302,L]
+
+  RewriteCond %{THE_REQUEST} \s/+admin\.html[\s?] [NC]
+  RewriteRule ^admin\.html$ admin/panel [R=302,L]
+
+  RewriteRule ^admin/?$ admin-login.php [L,QSA]
+  RewriteRule ^admin/panel/?$ admin.php [L,QSA]
+</IfModule>
+
 # ═══════════════════════════════════════════════════════════
 #  BROWSER CACHE — Tối ưu Lighthouse "Use efficient cache lifetimes"
 #  
@@ -52,6 +73,9 @@
 
 # ── Bật mod_headers nếu có — Cache-Control header ─────────
 <IfModule mod_headers.c>
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
 
   # ── Ảnh, Font, Video → 1 năm + immutable ──
   <FilesMatch "\.(jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2|ttf|otf|eot|mp4|webm|mp3)$">
