@@ -1,0 +1,97 @@
+# ═══════════════════════════════════════════════════════════
+#  BROWSER CACHE — Tối ưu Lighthouse "Use efficient cache lifetimes"
+#  
+#  Chiến lược:
+#  - Ảnh, font, video  → cache 1 NĂM (không đổi thường xuyên)
+#  - CSS, JS            → cache 30 NGÀY (có thể update)
+#  - HTML               → KHÔNG cache (luôn lấy bản mới nhất)
+# ═══════════════════════════════════════════════════════════
+
+# ── Bật mod_expires nếu có ────────────────────────────────
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # ── Ảnh — 1 năm ──
+  ExpiresByType image/jpeg                    "access plus 1 year"
+  ExpiresByType image/png                     "access plus 1 year"
+  ExpiresByType image/gif                     "access plus 1 year"
+  ExpiresByType image/webp                    "access plus 1 year"
+  ExpiresByType image/avif                    "access plus 1 year"
+  ExpiresByType image/svg+xml                 "access plus 1 year"
+  ExpiresByType image/x-icon                  "access plus 1 year"
+
+  # ── Font — 1 năm ──
+  ExpiresByType font/woff                     "access plus 1 year"
+  ExpiresByType font/woff2                    "access plus 1 year"
+  ExpiresByType font/ttf                      "access plus 1 year"
+  ExpiresByType font/otf                      "access plus 1 year"
+  ExpiresByType application/font-woff         "access plus 1 year"
+  ExpiresByType application/font-woff2        "access plus 1 year"
+  ExpiresByType application/x-font-ttf        "access plus 1 year"
+  ExpiresByType application/vnd.ms-fontobject "access plus 1 year"
+
+  # ── Video / Audio — 1 năm ──
+  ExpiresByType video/mp4                     "access plus 1 year"
+  ExpiresByType video/webm                    "access plus 1 year"
+  ExpiresByType audio/mpeg                    "access plus 1 year"
+
+  # ── CSS & JS — 30 ngày ──
+  ExpiresByType text/css                      "access plus 30 days"
+  ExpiresByType application/javascript        "access plus 30 days"
+  ExpiresByType text/javascript               "access plus 30 days"
+
+  # ── JSON & Data — 30 ngày ──
+  ExpiresByType application/json              "access plus 30 days"
+
+  # ── PDF — 30 ngày ──
+  ExpiresByType application/pdf               "access plus 30 days"
+
+  # ── HTML — không cache (luôn lấy mới) ──
+  ExpiresByType text/html                     "access plus 0 seconds"
+</IfModule>
+
+# ── Bật mod_headers nếu có — Cache-Control header ─────────
+<IfModule mod_headers.c>
+
+  # ── Ảnh, Font, Video → 1 năm + immutable ──
+  <FilesMatch "\.(jpg|jpeg|png|gif|webp|avif|svg|ico|woff|woff2|ttf|otf|eot|mp4|webm|mp3)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # ── CSS & JS → 30 ngày ──
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+
+  # ── JSON → 30 ngày ──
+  <FilesMatch "\.(json)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+
+  # ── PDF → 30 ngày ──
+  <FilesMatch "\.(pdf)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+
+  # ── HTML → không cache ──
+  <FilesMatch "\.(html|htm)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+</IfModule>
+
+# ═══════════════════════════════════════════════════════════
+#  GZIP COMPRESSION — Giảm dung lượng tải về
+# ═══════════════════════════════════════════════════════════
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+  AddOutputFilterByType DEFLATE font/woff
+  AddOutputFilterByType DEFLATE font/ttf
+  AddOutputFilterByType DEFLATE application/font-woff
+  AddOutputFilterByType DEFLATE application/x-font-ttf
+</IfModule>

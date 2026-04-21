@@ -1,0 +1,1786 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>VR Hotspot Editor v4 — Fixed</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap");
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        background: #0a0e14;
+        font-family: "Be Vietnam Pro", sans-serif;
+        color: #fff;
+        overflow: hidden;
+        height: 100vh;
+      }
+      .app {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+      .vr-wrap {
+        position: absolute;
+        width: 100vw;
+        height: calc(100vh - 80px);
+        top: 80px;
+        left: 0;
+        overflow: hidden;
+        cursor: grab;
+      }
+      .vr-wrap.dragging {
+        cursor: grabbing;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+      #hs-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+        overflow: hidden;
+      }
+      .vr-hs {
+        position: absolute;
+        pointer-events: auto;
+        cursor: grab;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        will-change: transform;
+        top: 0 !important;
+        left: 0 !important;
+      }
+      .vr-hs.hs-dragging {
+        cursor: grabbing;
+        opacity: 0.7;
+        z-index: 100;
+      }
+      .vr-hs-dot {
+        width: 18px;
+        height: 18px;
+        background: radial-gradient(
+          circle,
+          #1eb8d0 40%,
+          rgba(30, 184, 208, 0.3) 100%
+        );
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        border-radius: 50%;
+        box-shadow: 0 0 12px rgba(30, 184, 208, 0.6);
+        transition: transform 0.2s;
+      }
+      .vr-hs:hover .vr-hs-dot {
+        transform: scale(1.4);
+        box-shadow: 0 0 20px rgba(30, 184, 208, 0.9);
+      }
+      .vr-hs-label {
+        margin-top: 4px;
+        padding: 3px 10px;
+        background: rgba(1, 40, 45, 0.88);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 10px;
+        font-size: 9px;
+        font-weight: 600;
+        color: #fff;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+      .pano-label {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 20;
+        padding: 8px 16px;
+        background: rgba(0, 0, 0, 0.75);
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1eb8d0;
+        backdrop-filter: blur(8px);
+      }
+      .cam-hud {
+        position: absolute;
+        bottom: 12px;
+        left: 12px;
+        z-index: 20;
+        padding: 10px 16px;
+        background: rgba(0, 0, 0, 0.75);
+        border: 1px solid rgba(30, 184, 208, 0.3);
+        border-radius: 10px;
+        font-size: 11px;
+        font-family: monospace;
+        color: #0f0;
+        backdrop-filter: blur(8px);
+        line-height: 1.6;
+        min-width: 280px;
+        user-select: text;
+      }
+      .cam-hud b {
+        color: #1eb8d0;
+        font-weight: 700;
+      }
+      .cam-hud .hint {
+        color: rgba(255, 255, 255, 0.35);
+        font-size: 9px;
+        font-family: "Be Vietnam Pro", sans-serif;
+        margin-top: 4px;
+      }
+      .mode-badge {
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 20;
+        padding: 8px 20px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        max-width: 80%;
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+      .mode-badge.mode-place {
+        background: rgba(30, 184, 208, 0.2);
+        color: #1eb8d0;
+        border: 1px solid rgba(30, 184, 208, 0.4);
+      }
+      .mode-badge.mode-view {
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .mode-badge.mode-cam {
+        background: rgba(246, 200, 66, 0.15);
+        color: #f6c842;
+        border: 1px solid rgba(246, 200, 66, 0.4);
+      }
+      .crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 15;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      .crosshair.show {
+        opacity: 1;
+      }
+      .crosshair::before,
+      .crosshair::after {
+        content: "";
+        position: absolute;
+        background: rgba(30, 184, 208, 0.6);
+      }
+      .crosshair::before {
+        width: 1px;
+        height: 30px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .crosshair::after {
+        width: 30px;
+        height: 1px;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+      }
+      .side {
+        position: absolute;
+        top: 80px;
+        right: 0;
+        height: calc(100vh - 80px);
+        width: 380px;
+        z-index: 1000;
+        background: rgba(17, 24, 39, 0.95);
+        border-left: 1px solid rgba(255, 255, 255, 0.06);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .side-head {
+        padding: 10px 16px;
+        background: rgba(30, 184, 208, 0.08);
+        border-bottom: 1px solid rgba(30, 184, 208, 0.15);
+        flex-shrink: 0;
+      }
+      .side-head h2 {
+        font-size: 13px;
+        font-weight: 700;
+        color: #1eb8d0;
+        letter-spacing: 0.08em;
+      }
+      .tab-bar {
+        display: flex;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
+      }
+      .tab-btn {
+        flex: 1;
+        padding: 10px 4px;
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.4);
+        font-family: inherit;
+        font-size: 9px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+      }
+      .tab-btn.active {
+        color: #1eb8d0;
+        border-bottom-color: #1eb8d0;
+        background: rgba(30, 184, 208, 0.05);
+      }
+      .tab-btn:hover {
+        color: rgba(255, 255, 255, 0.7);
+      }
+      .tab-content {
+        display: none;
+        flex: 1;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+      }
+      .tab-content.active {
+        display: flex;
+        flex-direction: column;
+      }
+      .pano-selector {
+        padding: 8px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
+      }
+      .pano-selector label {
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.4);
+        display: block;
+        margin-bottom: 3px;
+      }
+      .pano-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 3px;
+        max-height: 140px;
+        overflow-y: auto;
+      }
+      .pano-thumb {
+        position: relative;
+        aspect-ratio: 2/1;
+        border-radius: 5px;
+        overflow: hidden;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+        background: #222;
+      }
+      .pano-thumb.active {
+        border-color: #1eb8d0;
+        box-shadow: 0 0 8px rgba(30, 184, 208, 0.4);
+      }
+      .pano-thumb:hover {
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      .pano-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .pano-thumb span.plbl {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 1px;
+        background: rgba(0, 0, 0, 0.75);
+        font-size: 6px;
+        text-align: center;
+        color: #fff;
+        font-weight: 600;
+      }
+      .pano-thumb .hs-count {
+        position: absolute;
+        top: 1px;
+        right: 1px;
+        background: rgba(30, 184, 208, 0.85);
+        color: #000;
+        font-size: 6px;
+        font-weight: 700;
+        padding: 0 3px;
+        border-radius: 6px;
+        line-height: 1.3;
+        display: none;
+      }
+      .pano-thumb .hs-count.has-hs {
+        display: block;
+      }
+      .section-title {
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.4);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        padding: 8px 14px 4px;
+        flex-shrink: 0;
+      }
+      .hs-pool {
+        padding: 4px 14px;
+        flex: 1;
+        overflow-y: auto;
+      }
+      .hs-pool-group {
+        margin-bottom: 8px;
+      }
+      .hs-pool-group-title {
+        font-size: 8px;
+        color: #1eb8d0;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        margin-bottom: 3px;
+        text-transform: uppercase;
+      }
+      .hs-pool-item {
+        padding: 5px 8px;
+        margin-bottom: 2px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 5px;
+        font-size: 9px;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 4px;
+      }
+      .hs-pool-item:hover {
+        background: rgba(30, 184, 208, 0.1);
+        border-color: rgba(30, 184, 208, 0.3);
+      }
+      .hs-pool-item.selected {
+        background: rgba(30, 184, 208, 0.2) !important;
+        border-color: rgba(30, 184, 208, 0.5) !important;
+        color: #5ce8f0;
+      }
+      .hs-pool-item .panos-tag {
+        font-size: 7px;
+        color: rgba(255, 255, 255, 0.25);
+        font-family: monospace;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+      }
+      .placed-section {
+        padding: 6px 14px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
+        max-height: 180px;
+        overflow-y: auto;
+      }
+      .placed-section h3 {
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.4);
+        letter-spacing: 0.1em;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+      }
+      .placed-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 3px 6px;
+        margin-bottom: 2px;
+        background: rgba(30, 184, 208, 0.06);
+        border-radius: 4px;
+        font-size: 9px;
+        gap: 4px;
+      }
+      .placed-item .name {
+        flex: 1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .placed-item .coords {
+        font-size: 7px;
+        color: rgba(255, 255, 255, 0.3);
+        font-family: monospace;
+      }
+      .placed-item button {
+        background: rgba(255, 80, 80, 0.15);
+        border: none;
+        color: #ff6b6b;
+        font-size: 8px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        cursor: pointer;
+      }
+      .amenity-list {
+        padding: 6px 14px;
+        flex: 1;
+        overflow-y: auto;
+      }
+      .amenity-card {
+        padding: 8px 10px;
+        margin-bottom: 4px;
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 6px;
+        transition: all 0.2s;
+      }
+      .amenity-card:hover {
+        border-color: rgba(255, 255, 255, 0.12);
+      }
+      .amenity-card.editing {
+        border-color: rgba(246, 200, 66, 0.5);
+        background: rgba(246, 200, 66, 0.05);
+      }
+      .amenity-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .amenity-card-name {
+        font-size: 10px;
+        font-weight: 600;
+        flex: 1;
+      }
+      .amenity-card-fov {
+        font-size: 9px;
+        color: #f6c842;
+        font-family: monospace;
+        font-weight: 700;
+      }
+      .amenity-card-pano {
+        font-size: 7px;
+        color: rgba(255, 255, 255, 0.3);
+      }
+      .amenity-card-body {
+        display: none;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .amenity-card.open .amenity-card-body {
+        display: block;
+      }
+      .ac-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+      .ac-row label {
+        font-size: 9px;
+        color: rgba(255, 255, 255, 0.5);
+        min-width: 30px;
+        font-weight: 600;
+      }
+      .ac-row input[type="range"] {
+        flex: 1;
+        accent-color: #f6c842;
+        height: 3px;
+      }
+      .ac-row .ac-val {
+        font-size: 10px;
+        color: #f6c842;
+        font-family: monospace;
+        min-width: 32px;
+        text-align: right;
+        font-weight: 700;
+      }
+      .ac-btn {
+        padding: 5px 10px;
+        border-radius: 5px;
+        border: 1px solid rgba(246, 200, 66, 0.3);
+        background: rgba(246, 200, 66, 0.08);
+        color: #f6c842;
+        font-size: 9px;
+        font-family: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .ac-btn:hover {
+        background: rgba(246, 200, 66, 0.2);
+      }
+      .ac-btn.go {
+        border-color: rgba(30, 184, 208, 0.3);
+        color: #1eb8d0;
+        background: rgba(30, 184, 208, 0.08);
+      }
+      .export-section {
+        padding: 10px 14px;
+      }
+      .export-section button {
+        width: 100%;
+        padding: 7px;
+        border-radius: 6px;
+        border: 1px solid rgba(30, 184, 208, 0.3);
+        background: rgba(30, 184, 208, 0.08);
+        color: #1eb8d0;
+        font-size: 10px;
+        font-family: inherit;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 5px;
+      }
+      .export-section button:hover {
+        background: rgba(30, 184, 208, 0.2);
+      }
+      .export-section textarea {
+        width: 100%;
+        height: 100px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 6px;
+        padding: 6px;
+        color: #0f0;
+        font-size: 7px;
+        font-family: monospace;
+        resize: vertical;
+      }
+      .btn-p {
+        background: rgba(200, 130, 255, 0.08) !important;
+        border-color: rgba(200, 130, 255, 0.3) !important;
+        color: #c882ff !important;
+      }
+      .btn-g {
+        background: rgba(40, 200, 80, 0.08) !important;
+        border-color: rgba(40, 200, 80, 0.3) !important;
+        color: #28c850 !important;
+      }
+      .btn-o {
+        background: rgba(255, 165, 0, 0.08) !important;
+        border-color: rgba(255, 165, 0, 0.3) !important;
+        color: #ffa500 !important;
+      }
+      .help-box {
+        margin-top: 8px;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 6px;
+        font-size: 8px;
+        color: rgba(255, 255, 255, 0.3);
+        line-height: 1.6;
+      }
+      .help-box b {
+        color: #1eb8d0;
+      }
+      .help-box .y {
+        color: #f6c842;
+      }
+      .filter-bar {
+        padding: 6px 14px;
+        flex-shrink: 0;
+        display: flex;
+        gap: 4px;
+      }
+      .filter-bar input {
+        flex: 1;
+        padding: 5px 10px;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 5px;
+        color: #fff;
+        font-size: 10px;
+        font-family: inherit;
+        outline: none;
+      }
+      .filter-bar input::placeholder {
+        color: rgba(255, 255, 255, 0.25);
+      }
+      /* FIX INDICATOR */
+      .fix-badge {
+        position: absolute;
+        top: 12px;
+        right: 400px;
+        z-index: 20;
+        padding: 6px 14px;
+        background: rgba(40, 200, 80, 0.15);
+        border: 1px solid rgba(40, 200, 80, 0.4);
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 600;
+        color: #28c850;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app">
+      <div
+        class="mock-nav"
+        style="
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100vw;
+          height: 80px;
+          background: #050f14;
+          border-bottom: 1px solid #1eb8d0;
+          z-index: 2000;
+          display: flex;
+          align-items: center;
+          padding-left: 20px;
+          font-weight: bold;
+          font-size: 14px;
+          letter-spacing: 2px;
+        "
+      >
+        TRÌNH GIẢ LẬP KHUNG NHÌN WEBSITE (CẮT NAVBAR 80px)
+      </div>
+      <div class="vr-wrap" id="vrWrap">
+        <canvas id="vrCanvas"></canvas>
+        <div id="hs-container"></div>
+        <div class="crosshair" id="crosshair"></div>
+        <div class="pano-label" id="panoLabel">Chọn PANO →</div>
+        <div class="cam-hud" id="camHud">
+          <b>Lon:</b><span id="hudLon">0</span> <b>Lat:</b
+          ><span id="hudLat">0</span> <b>FOV:</b><span id="hudFov">90</span>
+          <div class="hint">
+            Kéo xoay | Scroll zoom | Click đặt hotspot khi đã chọn tiện ích
+          </div>
+        </div>
+        <div class="mode-badge mode-view" id="modeBadge">VIEW MODE</div>
+      </div>
+      <div class="fix-badge">★ FIXED: hs3DPos + raycast khớp main.js</div>
+      <div class="side">
+        <div class="side-head"><h2>VR EDITOR v4 — FIXED</h2></div>
+        <div class="pano-selector">
+          <label>PANO:</label>
+          <div class="pano-grid" id="panoGrid"></div>
+        </div>
+        <div class="tab-bar">
+          <button class="tab-btn active" data-tab="tab-hs">
+            ① ĐẶT HOTSPOT
+          </button>
+          <button class="tab-btn" data-tab="tab-cam">
+            ② GÓC NHÌN TIỆN ÍCH
+          </button>
+          <button class="tab-btn" data-tab="tab-export">EXPORT</button>
+        </div>
+        <div class="tab-content active" id="tab-hs">
+          <div class="section-title">
+            Chọn tiện ích → Click trên VR để đặt chấm
+          </div>
+          <div class="hs-pool" id="hsPool"></div>
+          <div class="placed-section">
+            <h3>
+              Đã đặt trên <span id="placedPano">-</span> (<span id="placedCount"
+                >0</span
+              >):
+            </h3>
+            <div id="placedList"></div>
+          </div>
+        </div>
+        <div class="tab-content" id="tab-cam">
+          <div class="section-title">
+            Mỗi tiện ích có góc nhìn riêng (lon/lat/fov) khi user click vào
+          </div>
+          <div class="filter-bar">
+            <input
+              type="text"
+              id="amenityFilter"
+              placeholder="Tìm tiện ích..."
+            />
+          </div>
+          <div class="amenity-list" id="amenityList"></div>
+        </div>
+        <div class="tab-content" id="tab-export">
+          <div class="export-section">
+            <button id="btnExpHS">📋 Export vr-hotspot-data.json</button>
+            <button id="btnExpVR" class="btn-g">
+              📋 Export VR_MAP (lon/lat/fov)
+            </button>
+            <button id="btnExpAll" class="btn-p">📋 Export TẤT CẢ</button>
+            <button id="btnImport" class="btn-o">📥 Import JSON</button>
+            <textarea id="exportArea" placeholder="JSON..."></textarea>
+            <div class="help-box">
+              <b>★ FIXED VERSION</b> — hs3DPos và raycast giờ khớp 100% với
+              main.js<br /><br />
+              <b>Bước 1:</b> Tab "Đặt Hotspot" → chọn PANO → chọn tiện ích →
+              click VR<br />
+              <b>Bước 2:</b> Tab "Góc Nhìn" → mỗi tiện ích chỉnh lon/lat/fov<br />
+              <b>Bước 3:</b> Export → dán vào source code<br /><br />
+              <b class="y">Thay đổi so với bản cũ:</b><br />
+              1. hs3DPos: Z = <b>-</b>r*sin(phi)*sin(theta) (đảo dấu Z)<br />
+              2. raycast: dùng atan2(<b>-</b>p.z, p.x) để khớp ngược lại<br />
+              3. sphere.scale.x = -1 giữ nguyên như main.js
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      (function () {
+        "use strict";
+        var PANO_PATH = "./";
+
+        var ALL_PANOS = [
+          { key: "PANO_1_2", file: "PANO_1_2.jpg", label: "Pano 1" },
+          { key: "PANO_02_3", file: "PANO_02_3.jpg", label: "Pano 2" },
+          { key: "PANO_03_3", file: "PANO_03_3.jpg", label: "Pano 3" },
+          { key: "PANO_04_3", file: "PANO_04_3.jpg", label: "Pano 4" },
+          { key: "PANO_05_3", file: "PANO_05_3.jpg", label: "Pano 5" },
+          { key: "PANO_06_3", file: "PANO_06_3.jpg", label: "Pano 6" },
+          { key: "PANO_07_4", file: "PANO_07_4.jpg", label: "Pano 7" },
+          { key: "PANO_08_4", file: "PANO_08_4.jpg", label: "Pano 8" },
+          { key: "PANO_09_3", file: "PANO_09_3.jpg", label: "Pano 9" },
+          { key: "PANO_11_3", file: "PANO_11_3.jpg", label: "Pano 11" },
+          { key: "PANO_12_3", file: "PANO_12_3.jpg", label: "Pano 12" },
+          { key: "PANO_13_3", file: "PANO_13_3.jpg", label: "Pano 13" },
+          { key: "PANO_14_3", file: "PANO_14_3.jpg", label: "Pano 14" },
+          { key: "PANO_15_3", file: "PANO_15_3.jpg", label: "Pano 15" },
+          { key: "PANO_16_3", file: "PANO_16_3.jpg", label: "Pano 16" },
+        ];
+        var PANO_SHORT = {
+          PANO_1_2: "P1",
+          PANO_02_3: "P2",
+          PANO_03_3: "P3",
+          PANO_04_3: "P4",
+          PANO_05_3: "P5",
+          PANO_06_3: "P6",
+          PANO_07_4: "P7",
+          PANO_08_4: "P8",
+          PANO_09_3: "P9",
+          PANO_11_3: "P11",
+          PANO_12_3: "P12",
+          PANO_13_3: "P13",
+          PANO_14_3: "P14",
+          PANO_15_3: "P15",
+          PANO_16_3: "P16",
+        };
+
+        var AMENITIES = [
+          {
+            id: 1,
+            name: "Cổng Dự Án",
+            main: "PANO_03_3",
+            appear: ["PANO_02_3", "PANO_03_3"],
+          },
+          {
+            id: 2,
+            name: "Đài Phun Nước",
+            main: "PANO_04_3",
+            appear: ["PANO_04_3", "PANO_05_3", "PANO_06_3"],
+          },
+          {
+            id: 3,
+            name: "Trung Tâm Thương Mại 1",
+            main: "PANO_03_3",
+            appear: ["PANO_02_3", "PANO_03_3"],
+          },
+          {
+            id: 4,
+            name: "Trạm Sạc Xe Điện",
+            main: "PANO_04_3",
+            appear: ["PANO_04_3", "PANO_05_3", "PANO_06_3"],
+          },
+          {
+            id: 5,
+            name: "Bãi Đỗ Xe 1",
+            main: "PANO_04_3",
+            appear: ["PANO_03_3", "PANO_04_3", "PANO_05_3", "PANO_06_3"],
+          },
+          {
+            id: 6,
+            name: "Quảng Trường Cây Xanh",
+            main: "PANO_05_3",
+            appear: ["PANO_04_3", "PANO_05_3", "PANO_06_3", "PANO_08_4"],
+          },
+          {
+            id: 7,
+            name: "Sân Bóng Đá",
+            main: "PANO_05_3",
+            appear: ["PANO_05_3", "PANO_06_3", "PANO_07_4"],
+          },
+          {
+            id: 8,
+            name: "Gym Ngoài Trời",
+            main: "PANO_05_3",
+            appear: ["PANO_05_3", "PANO_06_3"],
+          },
+          {
+            id: 9,
+            name: "Khu Vui Chơi Trẻ Em",
+            main: "PANO_05_3",
+            appear: ["PANO_05_3", "PANO_06_3"],
+          },
+          {
+            id: 10,
+            name: "Ghế Nghỉ",
+            main: "PANO_05_3",
+            appear: ["PANO_05_3", "PANO_06_3"],
+          },
+          {
+            id: 11,
+            name: "Vườn Tri Thức",
+            main: "PANO_05_3",
+            appear: ["PANO_05_3"],
+          },
+          {
+            id: 12,
+            name: "Bàn Đá Chơi Cờ",
+            main: "PANO_05_3",
+            appear: ["PANO_05_3", "PANO_06_3"],
+          },
+          {
+            id: 13,
+            name: "Hồ Vọng Nguyệt",
+            main: "PANO_05_3",
+            appear: ["PANO_05_3", "PANO_06_3"],
+          },
+          {
+            id: 14,
+            name: "Khán Đài Mini",
+            main: "PANO_05_3",
+            appear: ["PANO_05_3", "PANO_06_3"],
+          },
+          {
+            id: 15,
+            name: "Khu Nướng BBQ",
+            main: "PANO_07_4",
+            appear: ["PANO_07_4"],
+          },
+          {
+            id: 16,
+            name: "Vườn Dưỡng Sinh",
+            main: "PANO_07_4",
+            appear: ["PANO_07_4"],
+          },
+          {
+            id: 17,
+            name: "Vườn Thảo Mộc",
+            main: "PANO_07_4",
+            appear: ["PANO_07_4"],
+          },
+          {
+            id: 18,
+            name: "Khu Camping",
+            main: "PANO_07_4",
+            appear: ["PANO_07_4"],
+          },
+          {
+            id: 19,
+            name: "Trường Mầm Non",
+            main: "PANO_06_3",
+            appear: [
+              "PANO_04_3",
+              "PANO_05_3",
+              "PANO_06_3",
+              "PANO_07_4",
+              "PANO_08_4",
+            ],
+          },
+          {
+            id: 20,
+            name: "Sân Bóng Rổ 1",
+            main: "PANO_08_4",
+            appear: ["PANO_07_4", "PANO_08_4"],
+          },
+          {
+            id: 21,
+            name: "Sân Bóng Rổ 2",
+            main: "PANO_08_4",
+            appear: ["PANO_07_4", "PANO_08_4"],
+          },
+          {
+            id: 22,
+            name: "Bãi Đỗ Xe 2",
+            main: "PANO_08_4",
+            appear: ["PANO_07_4", "PANO_08_4"],
+          },
+          {
+            id: 23,
+            name: "Sân Pickleball 1",
+            main: "PANO_08_4",
+            appear: ["PANO_07_4", "PANO_08_4"],
+          },
+          {
+            id: 24,
+            name: "Sân Pickleball 2",
+            main: "PANO_09_3",
+            appear: ["PANO_09_3"],
+          },
+          {
+            id: 25,
+            name: "Bãi Đỗ Xe 3",
+            main: "PANO_09_3",
+            appear: ["PANO_09_3"],
+          },
+          {
+            id: 26,
+            name: "Nhà Sinh Hoạt Cộng Đồng",
+            main: "PANO_14_3",
+            appear: ["PANO_13_3", "PANO_14_3"],
+          },
+          {
+            id: 27,
+            name: "Trung Tâm Thương Mại 2",
+            main: "PANO_13_3",
+            appear: ["PANO_09_3", "PANO_12_3", "PANO_13_3", "PANO_14_3"],
+          },
+          {
+            id: 28,
+            name: "Bể Bơi 1 Chân Toà Nhà Hỗn Hợp",
+            main: "PANO_12_3",
+            appear: ["PANO_12_3", "PANO_13_3"],
+          },
+          {
+            id: 29,
+            name: "Bể Bơi 2 Chân Toà Nhà Hỗn Hợp",
+            main: "PANO_13_3",
+            appear: ["PANO_13_3"],
+          },
+          {
+            id: 30,
+            name: "Công Viên Cây Xanh",
+            main: "PANO_13_3",
+            appear: ["PANO_13_3"],
+          },
+          {
+            id: 31,
+            name: "Siêu Thị Khối Đế",
+            main: "PANO_11_3",
+            appear: ["PANO_11_3", "PANO_12_3", "PANO_16_3"],
+          },
+          {
+            id: 32,
+            name: "Spa Khối Đế",
+            main: "PANO_11_3",
+            appear: ["PANO_11_3", "PANO_12_3"],
+          },
+          {
+            id: 33,
+            name: "Cafe Restaurant Khối Đế",
+            main: "PANO_11_3",
+            appear: ["PANO_11_3"],
+          },
+          {
+            id: 34,
+            name: "Biểu Tượng Dự Án",
+            main: "PANO_02_3",
+            appear: ["PANO_02_3"],
+          },
+          { id: 35, name: "Biển Tên Dự Án", main: "PANO_16_3", appear: [] },
+          {
+            id: 36,
+            name: "Đài Vọng Cảnh 1",
+            main: "PANO_15_3",
+            appear: ["PANO_15_3"],
+          },
+          {
+            id: 37,
+            name: "Đài Vọng Cảnh 2",
+            main: "PANO_16_3",
+            appear: ["PANO_16_3"],
+          },
+          { id: 38, name: "Đài Vọng Cảnh 3", main: "PANO_16_3", appear: [] },
+          {
+            id: 39,
+            name: "Vườn Hoa Bồ Công Anh",
+            main: "PANO_13_3",
+            appear: ["PANO_13_3"],
+          },
+          {
+            id: 40,
+            name: "Thềm Viễn Cảnh 1",
+            main: "PANO_15_3",
+            appear: ["PANO_15_3"],
+          },
+          { id: 41, name: "Thềm Viễn Cảnh 2", main: "PANO_16_3", appear: [] },
+          {
+            id: 42,
+            name: "Điểm Nhấn Ánh Dương 1",
+            main: "PANO_02_3",
+            appear: ["PANO_02_3"],
+          },
+          {
+            id: 43,
+            name: "Điểm Nhấn Ánh Dương 2",
+            main: "PANO_12_3",
+            appear: ["PANO_12_3"],
+          },
+        ];
+
+        var GROUPS = {
+          "CỔNG CHÀO": [1, 2, 3, 4, 5],
+          "QUẢNG TRƯỜNG": [6, 7, 8, 9, 10, 11, 12, 13, 14],
+          "SINH THÁI": [15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25],
+          "PHỨC HỢP": [26, 27, 28, 29, 30, 31, 32, 33],
+          "VEN SÔNG": [34, 35, 36, 37, 38, 39, 40, 41, 42, 43],
+        };
+
+        function getAmenity(id) {
+          return AMENITIES.find(function (a) {
+            return a.id === id;
+          });
+        }
+        function fullLabel(a) {
+          return a.id + ". " + a.name;
+        }
+
+        // ═══ STATE ═══
+        var currentPano = null,
+          selectedAmenityId = null;
+        var hsData = {};
+        try {
+          var s1 = localStorage.getItem("vre4-hs");
+          if (s1) hsData = JSON.parse(s1);
+        } catch (e) {}
+        var amenityConfig = {};
+        try {
+          var s2 = localStorage.getItem("vre4-ac");
+          if (s2) amenityConfig = JSON.parse(s2);
+        } catch (e) {}
+        function saveHs() {
+          try {
+            localStorage.setItem("vre4-hs", JSON.stringify(hsData));
+          } catch (e) {}
+        }
+        function saveAC() {
+          try {
+            localStorage.setItem("vre4-ac", JSON.stringify(amenityConfig));
+          } catch (e) {}
+        }
+
+        // ═══ THREE.JS ═══
+        var canvas = document.getElementById("vrCanvas"),
+          vrWrap = document.getElementById("vrWrap");
+        var renderer, scene, camera, sphere;
+        var lon = 0,
+          lat = 0,
+          fov = 90,
+          isDrag = false,
+          dragMoved = false,
+          sx = 0,
+          sy = 0,
+          sLon = 0,
+          sLat = 0,
+          needsFrame = true;
+
+        function initThree() {
+          renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+          });
+          renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+          scene = new THREE.Scene();
+          camera = new THREE.PerspectiveCamera(90, 1, 1, 1100);
+          camera.position.set(0, 0, 0);
+          var geo = new THREE.SphereGeometry(1000, 128, 64);
+          sphere = new THREE.Mesh(
+            geo,
+            new THREE.MeshBasicMaterial({ map: null, side: THREE.BackSide }),
+          );
+          // ★ KHỚP MAIN.JS: sphere.scale.x = -1
+          sphere.scale.x = -1;
+          scene.add(sphere);
+          resize();
+          startLoop();
+        }
+
+        function resize() {
+          if (!renderer) return;
+          var w = vrWrap.clientWidth,
+            h = vrWrap.clientHeight;
+          renderer.setSize(w, h);
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+          needsFrame = true;
+        }
+        window.addEventListener("resize", resize);
+
+        function renderOnce() {
+          if (!renderer) return;
+          camera.fov = fov;
+          camera.updateProjectionMatrix();
+          // ★ KHỚP MAIN.JS: camera.lookAt logic giống hệt
+          var phi = THREE.MathUtils.degToRad(90 - lat);
+          var theta = THREE.MathUtils.degToRad(lon);
+          camera.lookAt(
+            Math.sin(phi) * Math.cos(theta),
+            Math.cos(phi),
+            Math.sin(phi) * Math.sin(theta),
+          );
+          renderer.render(scene, camera);
+          updateHsPositions();
+          updateHUD();
+        }
+
+        function startLoop() {
+          (function l() {
+            requestAnimationFrame(l);
+            if (needsFrame || isDrag || dhIdx >= 0) {
+              renderOnce();
+              needsFrame = false;
+            }
+          })();
+        }
+        function rr() {
+          needsFrame = true;
+        }
+
+        function loadPano(key) {
+          currentPano = key;
+          var info = ALL_PANOS.find(function (p) {
+            return p.key === key;
+          });
+          document.getElementById("panoLabel").textContent =
+            (PANO_SHORT[key] || key) + " — " + (info ? info.label : "");
+          document.getElementById("placedPano").textContent =
+            PANO_SHORT[key] || key;
+          lon = 0;
+          lat = 0;
+          fov = 90;
+          new THREE.TextureLoader().load(
+            PANO_PATH + (info ? info.file : key + ".jpg"),
+            function (tex) {
+              tex.minFilter = THREE.LinearFilter;
+              tex.magFilter = THREE.LinearFilter;
+              tex.generateMipmaps = false;
+              if (sphere.material.map) sphere.material.map.dispose();
+              sphere.material.map = tex;
+              sphere.material.needsUpdate = true;
+              rr();
+            },
+          );
+          refreshHotspots();
+          refreshPlacedList();
+          rr();
+          document.querySelectorAll(".pano-thumb").forEach(function (t) {
+            t.classList.toggle("active", t.dataset.key === key);
+          });
+        }
+
+        // ═══ DRAG CONTROL ═══
+        canvas.addEventListener("mousedown", function (e) {
+          if (e.button !== 0) return;
+          isDrag = true;
+          dragMoved = false;
+          sx = e.clientX;
+          sy = e.clientY;
+          sLon = lon;
+          sLat = lat;
+          vrWrap.classList.add("dragging");
+          e.preventDefault();
+        });
+        window.addEventListener("mousemove", function (e) {
+          if (!isDrag) return;
+          if (Math.abs(e.clientX - sx) > 3 || Math.abs(e.clientY - sy) > 3)
+            dragMoved = true;
+          lon = sLon - (e.clientX - sx) * 0.18;
+          lat = sLat + (e.clientY - sy) * 0.18;
+          lat = Math.max(-85, Math.min(85, lat));
+        });
+        window.addEventListener("mouseup", function () {
+          if (!isDrag) return;
+          isDrag = false;
+          vrWrap.classList.remove("dragging");
+          rr();
+        });
+        canvas.addEventListener(
+          "wheel",
+          function (e) {
+            fov = Math.max(30, Math.min(120, fov + e.deltaY * 0.05));
+            rr();
+            e.preventDefault();
+          },
+          { passive: false },
+        );
+
+        // ═══════════════════════════════════════════════════════════
+        //  ★★★ HOTSPOT — FIXED COORDINATE FUNCTIONS ★★★
+        //  Khớp 100% với main.js
+        // ═══════════════════════════════════════════════════════════
+
+        var hsContainer = document.getElementById("hs-container"),
+          hsEls = [];
+
+        // ★ FIX #1: hs3DPos — khớp main.js (đảo dấu Z)
+        // main.js:  x = r*sin(phi)*cos(theta)
+        //           y = r*cos(phi)
+        //           z = -r*sin(phi)*sin(theta)   ← DẤU TRỪ
+        function hs3DPos(px, py) {
+          var theta = (px / 2000) * 2 * Math.PI;
+          var phi = (py / 1000) * Math.PI;
+          var r = 1000 * 0.92; // ★ Khớp main.js: r = 1000 * 0.92 = 920
+          return new THREE.Vector3(
+            r * Math.sin(phi) * Math.cos(theta),
+            r * Math.cos(phi),
+            -r * Math.sin(phi) * Math.sin(theta), // ★ ĐẢO DẤU Z — khớp main.js
+          );
+        }
+
+        function refreshHotspots() {
+          hsContainer.innerHTML = "";
+          hsEls = [];
+          if (!currentPano || !hsData[currentPano]) return;
+          hsData[currentPano].forEach(function (hs, idx) {
+            var pos = hs3DPos(hs.px, hs.py);
+            var el = document.createElement("div");
+            el.className = "vr-hs";
+            el.innerHTML =
+              '<div class="vr-hs-dot"></div><div class="vr-hs-label">' +
+              hs.label +
+              "</div>";
+            el.addEventListener("mousedown", function (e) {
+              e.stopPropagation();
+              e.preventDefault();
+              dhIdx = idx;
+              dhEl = el;
+              dhMoved = false;
+              el.classList.add("hs-dragging");
+              document.body.style.cursor = "grabbing";
+            });
+            hsContainer.appendChild(el);
+            hsEls.push({ el: el, pos: pos });
+          });
+          rr();
+        }
+
+        // ═══ HOTSPOT DRAG ═══
+        var dhIdx = -1,
+          dhEl = null,
+          dhMoved = false;
+        window.addEventListener("mousemove", function (e) {
+          if (dhIdx < 0 || !dhEl) return;
+          dhMoved = true;
+          var r = vrWrap.getBoundingClientRect();
+          dhEl.style.transform =
+            "translate3d(" +
+            (e.clientX - r.left) +
+            "px," +
+            (e.clientY - r.top) +
+            "px,0) translate(-50%,-50%)";
+        });
+        window.addEventListener("mouseup", function (e) {
+          if (dhIdx < 0) return;
+          if (dhEl) dhEl.classList.remove("hs-dragging");
+          document.body.style.cursor = "";
+          if (dhMoved && currentPano && hsData[currentPano]) {
+            var np = raycast(e);
+            if (np) {
+              hsData[currentPano][dhIdx].px = np.px;
+              hsData[currentPano][dhIdx].py = np.py;
+              saveHs();
+              refreshPlacedList();
+            }
+            refreshHotspots();
+          }
+          dhIdx = -1;
+          dhEl = null;
+        });
+
+        var _v = new THREE.Vector3();
+        function updateHsPositions() {
+          if (!hsEls.length || !camera) return;
+          var w = canvas.clientWidth,
+            h = canvas.clientHeight;
+          camera.updateMatrixWorld(true);
+          for (var i = 0; i < hsEls.length; i++) {
+            var hs = hsEls[i];
+            _v.copy(hs.pos).project(camera);
+            if (_v.z > 1) {
+              hs.el.style.display = "none";
+              continue;
+            }
+            var x = (0.5 + _v.x / 2) * w;
+            var y = (0.5 - _v.y / 2) * h;
+            if (x < -100 || x > w + 100 || y < -100 || y > h + 100) {
+              hs.el.style.display = "none";
+              continue;
+            }
+            hs.el.style.display = "";
+            hs.el.style.transform =
+              "translate3d(" + x + "px," + y + "px,0) translate(-50%,-50%)";
+          }
+        }
+
+        // ★ FIX #2: raycast — nghịch đảo của hs3DPos
+        // Vì hs3DPos dùng z = -r*sin(phi)*sin(theta)
+        // Khi raycast trả về point (x, y, z) trên sphere (scale.x = -1),
+        // ta cần tính theta từ (x, -z) thay vì (x, z)
+        function raycast(e) {
+          var r = canvas.getBoundingClientRect();
+          var mx = ((e.clientX - r.left) / r.width) * 2 - 1;
+          var my = -((e.clientY - r.top) / r.height) * 2 + 1;
+          var ray = new THREE.Raycaster();
+          ray.setFromCamera(new THREE.Vector2(mx, my), camera);
+          var hits = ray.intersectObject(sphere);
+          if (!hits.length) return null;
+
+          var p = hits[0].point;
+          var d = Math.sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+          var ph = Math.acos(p.y / d);
+
+          // ★ NGHỊCH ĐẢO CỦA hs3DPos:
+          // hs3DPos: x = r*sin(phi)*cos(theta), z = -r*sin(phi)*sin(theta)
+          // Nên: cos(theta) = x / (r*sin(phi)), sin(theta) = -z / (r*sin(phi))
+          // → theta = atan2(-z, x)
+          var th = Math.atan2(-p.z, p.x);
+          if (th < 0) th += 2 * Math.PI;
+
+          return {
+            px: Math.round((th / (2 * Math.PI)) * 2000),
+            py: Math.round((ph / Math.PI) * 1000),
+          };
+        }
+
+        // ═══ CLICK PLACE ═══
+        canvas.addEventListener("click", function (e) {
+          if (!selectedAmenityId || !currentPano || dragMoved) return;
+          var pos = raycast(e);
+          if (!pos) return;
+          var a = getAmenity(selectedAmenityId);
+          if (!a) return;
+          if (!hsData[currentPano]) hsData[currentPano] = [];
+          hsData[currentPano].push({
+            px: pos.px,
+            py: pos.py,
+            target: a.main,
+            label: fullLabel(a),
+          });
+          saveHs();
+          refreshHotspots();
+          refreshPlacedList();
+          updatePanoThumbs();
+          // Feedback
+          var fb = document.createElement("div");
+          fb.style.cssText =
+            "position:fixed;z-index:9999;background:#1eb8d0;color:#fff;font:bold 10px sans-serif;padding:4px 12px;border-radius:16px;pointer-events:none;transition:opacity .5s";
+          fb.textContent = "✓ " + a.name + " (" + pos.px + "," + pos.py + ")";
+          fb.style.left = e.clientX + "px";
+          fb.style.top = e.clientY - 28 + "px";
+          document.body.appendChild(fb);
+          setTimeout(function () {
+            fb.style.opacity = "0";
+          }, 1200);
+          setTimeout(function () {
+            fb.remove();
+          }, 1800);
+        });
+
+        function updateHUD() {
+          document.getElementById("hudLon").textContent = Math.round(lon);
+          document.getElementById("hudLat").textContent = Math.round(lat);
+          document.getElementById("hudFov").textContent = Math.round(fov);
+        }
+        function updateBadge() {
+          var b = document.getElementById("modeBadge"),
+            ch = document.getElementById("crosshair");
+          if (selectedAmenityId) {
+            var a = getAmenity(selectedAmenityId);
+            b.className = "mode-badge mode-place";
+            b.textContent = "ĐẶT: " + fullLabel(a) + " → Click trên VR";
+            ch.classList.add("show");
+          } else {
+            b.className = "mode-badge mode-view";
+            b.textContent = "VIEW MODE";
+            ch.classList.remove("show");
+          }
+        }
+
+        // ═══ UI: TABS ═══
+        document.querySelectorAll(".tab-btn").forEach(function (btn) {
+          btn.addEventListener("click", function () {
+            document.querySelectorAll(".tab-btn").forEach(function (b) {
+              b.classList.remove("active");
+            });
+            document.querySelectorAll(".tab-content").forEach(function (c) {
+              c.classList.remove("active");
+            });
+            this.classList.add("active");
+            document.getElementById(this.dataset.tab).classList.add("active");
+          });
+        });
+
+        // ═══ UI: PANO GRID ═══
+        var pg = document.getElementById("panoGrid");
+        ALL_PANOS.forEach(function (p) {
+          var d = document.createElement("div");
+          d.className = "pano-thumb";
+          d.dataset.key = p.key;
+          d.innerHTML =
+            '<img src="' +
+            PANO_PATH +
+            p.file +
+            '" onerror="this.style.display=\'none\'"/><span class="plbl">' +
+            (PANO_SHORT[p.key] || p.key) +
+            '</span><span class="hs-count" id="hsc-' +
+            p.key +
+            '">0</span>';
+          d.addEventListener("click", function () {
+            loadPano(p.key);
+          });
+          pg.appendChild(d);
+        });
+        function updatePanoThumbs() {
+          ALL_PANOS.forEach(function (p) {
+            var el = document.getElementById("hsc-" + p.key);
+            if (el) {
+              var c = (hsData[p.key] || []).length;
+              el.textContent = c;
+              el.classList.toggle("has-hs", c > 0);
+            }
+          });
+        }
+        updatePanoThumbs();
+
+        // ═══ UI: AMENITY POOL (Tab 1) ═══
+        var hp = document.getElementById("hsPool");
+        Object.keys(GROUPS).forEach(function (g) {
+          var gd = document.createElement("div");
+          gd.className = "hs-pool-group";
+          gd.innerHTML = '<div class="hs-pool-group-title">' + g + "</div>";
+          GROUPS[g].forEach(function (id) {
+            var a = getAmenity(id);
+            if (!a) return;
+            var item = document.createElement("div");
+            item.className = "hs-pool-item";
+            item.dataset.aid = id;
+            var pTags = a.appear
+              .map(function (k) {
+                return PANO_SHORT[k] || k;
+              })
+              .join(",");
+            item.innerHTML =
+              "<span>" +
+              fullLabel(a) +
+              '</span><span class="panos-tag">' +
+              pTags +
+              "</span>";
+            item.addEventListener("click", function () {
+              if (selectedAmenityId === id) {
+                selectedAmenityId = null;
+                item.classList.remove("selected");
+              } else {
+                selectedAmenityId = id;
+                document
+                  .querySelectorAll(".hs-pool-item")
+                  .forEach(function (el) {
+                    el.classList.remove("selected");
+                  });
+                item.classList.add("selected");
+              }
+              updateBadge();
+            });
+            gd.appendChild(item);
+          });
+          hp.appendChild(gd);
+        });
+
+        // ═══ UI: PLACED LIST ═══
+        function refreshPlacedList() {
+          var list = document.getElementById("placedList"),
+            cnt = document.getElementById("placedCount");
+          if (!currentPano) {
+            list.innerHTML = "";
+            cnt.textContent = "0";
+            return;
+          }
+          var items = hsData[currentPano] || [];
+          cnt.textContent = items.length;
+          if (!items.length) {
+            list.innerHTML =
+              '<div style="color:rgba(255,255,255,.2);font-size:9px;padding:4px">Chưa có</div>';
+            return;
+          }
+          list.innerHTML = items
+            .map(function (hs, i) {
+              return (
+                '<div class="placed-item"><span class="name">' +
+                hs.label +
+                '</span><span class="coords">(' +
+                hs.px +
+                "," +
+                hs.py +
+                ") →" +
+                (PANO_SHORT[hs.target] || hs.target) +
+                '</span><button data-i="' +
+                i +
+                '">✕</button></div>'
+              );
+            })
+            .join("");
+          list.querySelectorAll("button").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              hsData[currentPano].splice(+this.dataset.i, 1);
+              if (!hsData[currentPano].length) delete hsData[currentPano];
+              saveHs();
+              refreshHotspots();
+              refreshPlacedList();
+              updatePanoThumbs();
+            });
+          });
+        }
+
+        // ═══ UI: AMENITY CONFIG (Tab 2) ═══
+        var aList = document.getElementById("amenityList");
+        function buildAmenityList(filter) {
+          aList.innerHTML = "";
+          var fl = filter ? filter.toLowerCase() : "";
+          AMENITIES.forEach(function (a) {
+            if (
+              fl &&
+              a.name.toLowerCase().indexOf(fl) < 0 &&
+              String(a.id).indexOf(fl) < 0
+            )
+              return;
+            var cfg = amenityConfig[a.id] || { lon: 0, lat: 0, fov: 90 };
+            var card = document.createElement("div");
+            card.className = "amenity-card";
+            card.dataset.aid = a.id;
+            var mainShort = PANO_SHORT[a.main] || a.main;
+            card.innerHTML =
+              '<div class="amenity-card-head">' +
+              '<span class="amenity-card-name">' +
+              fullLabel(a) +
+              "</span>" +
+              '<span class="amenity-card-fov">fov:' +
+              cfg.fov +
+              "</span>" +
+              '<span class="amenity-card-pano">→' +
+              mainShort +
+              "</span></div>" +
+              '<div class="amenity-card-body">' +
+              '<div class="ac-row"><label>Lon</label><input type="range" min="-360" max="360" value="' +
+              cfg.lon +
+              '" step="1" class="ac-lon"/><span class="ac-val ac-lon-v">' +
+              cfg.lon +
+              "</span></div>" +
+              '<div class="ac-row"><label>Lat</label><input type="range" min="-85" max="85" value="' +
+              cfg.lat +
+              '" step="1" class="ac-lat"/><span class="ac-val ac-lat-v">' +
+              cfg.lat +
+              "</span></div>" +
+              '<div class="ac-row"><label>FOV</label><input type="range" min="30" max="120" value="' +
+              cfg.fov +
+              '" step="1" class="ac-fov"/><span class="ac-val ac-fov-v">' +
+              cfg.fov +
+              "</span></div>" +
+              '<div style="display:flex;gap:5px;margin-top:6px">' +
+              '<button class="ac-btn ac-go">👁 Xem trên VR</button>' +
+              '<button class="ac-btn ac-use">📌 Dùng góc hiện tại</button>' +
+              '<button class="ac-btn" style="border-color:rgba(40,200,80,.3);color:#28c850" onclick="this.closest(\'.amenity-card\').classList.remove(\'open\')">✓ Xong</button>' +
+              "</div></div>";
+            card
+              .querySelector(".amenity-card-head")
+              .addEventListener("click", function () {
+                var wasOpen = card.classList.contains("open");
+                aList.querySelectorAll(".amenity-card").forEach(function (c) {
+                  c.classList.remove("open", "editing");
+                });
+                if (!wasOpen) card.classList.add("open", "editing");
+              });
+            var slLon = card.querySelector(".ac-lon"),
+              slLat = card.querySelector(".ac-lat"),
+              slFov = card.querySelector(".ac-fov");
+            var vLon = card.querySelector(".ac-lon-v"),
+              vLat = card.querySelector(".ac-lat-v"),
+              vFov = card.querySelector(".ac-fov-v");
+            function saveCfg() {
+              amenityConfig[a.id] = {
+                lon: +slLon.value,
+                lat: +slLat.value,
+                fov: +slFov.value,
+              };
+              saveAC();
+              card.querySelector(".amenity-card-fov").textContent =
+                "fov:" + slFov.value;
+            }
+            slLon.addEventListener("input", function () {
+              vLon.textContent = this.value;
+              saveCfg();
+            });
+            slLat.addEventListener("input", function () {
+              vLat.textContent = this.value;
+              saveCfg();
+            });
+            slFov.addEventListener("input", function () {
+              vFov.textContent = this.value;
+              saveCfg();
+            });
+            card
+              .querySelector(".ac-go")
+              .addEventListener("click", function (e) {
+                e.stopPropagation();
+                loadPano(a.main);
+                lon = +slLon.value;
+                lat = +slLat.value;
+                fov = +slFov.value;
+                rr();
+                var b = document.getElementById("modeBadge");
+                b.className = "mode-badge mode-cam";
+                b.textContent =
+                  "XEM: " +
+                  fullLabel(a) +
+                  " (lon:" +
+                  Math.round(lon) +
+                  " lat:" +
+                  Math.round(lat) +
+                  " fov:" +
+                  Math.round(fov) +
+                  ")";
+              });
+            card
+              .querySelector(".ac-use")
+              .addEventListener("click", function (e) {
+                e.stopPropagation();
+                slLon.value = Math.round(lon);
+                vLon.textContent = Math.round(lon);
+                slLat.value = Math.round(lat);
+                vLat.textContent = Math.round(lat);
+                slFov.value = Math.round(fov);
+                vFov.textContent = Math.round(fov);
+                saveCfg();
+              });
+            aList.appendChild(card);
+          });
+        }
+        buildAmenityList("");
+        document
+          .getElementById("amenityFilter")
+          .addEventListener("input", function () {
+            buildAmenityList(this.value);
+          });
+
+        // ═══ EXPORT ═══
+        document
+          .getElementById("btnExpHS")
+          .addEventListener("click", function () {
+            var j = JSON.stringify(hsData, null, 2);
+            document.getElementById("exportArea").value = j;
+            try {
+              navigator.clipboard.writeText(j);
+              flash(this, "✓ Copied!", "📋 Export vr-hotspot-data.json");
+            } catch (e) {}
+          });
+        document
+          .getElementById("btnExpVR")
+          .addEventListener("click", function () {
+            var out = buildVrMapExport();
+            document.getElementById("exportArea").value = out;
+            try {
+              navigator.clipboard.writeText(out);
+              flash(this, "✓ Copied!", "📋 Export VR_MAP");
+            } catch (e) {}
+          });
+        document
+          .getElementById("btnExpAll")
+          .addEventListener("click", function () {
+            var all = JSON.stringify(
+              { amenityConfig: amenityConfig, hotspots: hsData },
+              null,
+              2,
+            );
+            document.getElementById("exportArea").value = all;
+            try {
+              navigator.clipboard.writeText(all);
+              flash(this, "✓ Copied!", "📋 Export TẤT CẢ");
+            } catch (e) {}
+          });
+        document
+          .getElementById("btnImport")
+          .addEventListener("click", function () {
+            var txt = document.getElementById("exportArea").value.trim();
+            if (!txt) {
+              alert("Paste JSON trước!");
+              return;
+            }
+            try {
+              var d = JSON.parse(txt);
+              if (d.amenityConfig && d.hotspots) {
+                amenityConfig = d.amenityConfig;
+                hsData = d.hotspots;
+                saveAC();
+                saveHs();
+                alert("Import ALL OK!");
+              } else if (
+                Object.keys(d).some(function (k) {
+                  return Array.isArray(d[k]);
+                })
+              ) {
+                hsData = d;
+                saveHs();
+                alert("Import Hotspot OK!");
+              } else {
+                alert("Không nhận dạng được format");
+                return;
+              }
+              if (currentPano) {
+                refreshHotspots();
+                refreshPlacedList();
+              }
+              updatePanoThumbs();
+              buildAmenityList("");
+            } catch (e) {
+              alert("JSON lỗi: " + e.message);
+            }
+          });
+        function flash(btn, msg, orig) {
+          btn.textContent = msg;
+          setTimeout(function () {
+            btn.textContent = orig;
+          }, 1800);
+        }
+
+        function buildVrMapExport() {
+          var lines = ["const VR_MAP = {"];
+          AMENITIES.forEach(function (a) {
+            var cfg = amenityConfig[a.id] || { lon: 0, lat: 0, fov: 90 };
+            var info = ALL_PANOS.find(function (p) {
+              return p.key === a.main;
+            });
+            var src = info
+              ? "frames/3dvr/" + info.file
+              : "frames/3dvr/" + a.main + ".jpg";
+            lines.push(
+              '  "' +
+                a.name +
+                '": { "src": "' +
+                src +
+                '", "lon": ' +
+                cfg.lon +
+                ', "lat": ' +
+                cfg.lat +
+                ', "fov": ' +
+                cfg.fov +
+                " },",
+            );
+          });
+          lines.push(
+            '  default: { "src": "frames/3dvr/PANO_16_3.jpg", "lon": 0, "lat": 0, "fov": 90 }',
+          );
+          lines.push("};");
+          return lines.join("\n");
+        }
+
+        initThree();
+        updateBadge();
+      })();
+    </script>
+  </body>
+</html>

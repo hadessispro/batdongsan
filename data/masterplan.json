@@ -1,0 +1,280 @@
+{
+  "CỔNG CHÀO": {
+    "type": "flag",
+    "top": 29.72,
+    "left": 30.36
+  },
+  "QUẢNG TRƯỜNG": {
+    "type": "flag",
+    "top": 25.39,
+    "left": 50.26
+  },
+  "VEN SÔNG": {
+    "type": "flag",
+    "top": 34,
+    "left": 18
+  },
+  "PHỨC HỢP": {
+    "type": "flag",
+    "top": 77.14,
+    "left": 59.43
+  },
+  "Cổng Dự Án": {
+    "icon": "fa-solid fa-archway",
+    "group": "g1",
+    "top": 35.14,
+    "left": 31.09
+  },
+  "Bãi Đỗ Xe 1": {
+    "icon": "fa-solid fa-car",
+    "group": "g1",
+    "top": 57.52,
+    "left": 66.09
+  },
+  "Trạm Sạc Xe Điện": {
+    "icon": "fa-solid fa-bolt-lightning",
+    "group": "g1",
+    "top": 33.45,
+    "left": 38.18
+  },
+  "Đài Phun Nước": {
+    "icon": "fa-solid fa-faucet-drip",
+    "group": "g1",
+    "top": 28.04,
+    "left": 44.84
+  },
+  "Trung Tâm Thương Mại": {
+    "icon": "fa-solid fa-store",
+    "group": "g1",
+    "top": 70.4,
+    "left": 46.77
+  },
+  "Quảng Trường Cây Xanh": {
+    "icon": "fa-solid fa-tree",
+    "group": "g2",
+    "top": 37.91,
+    "left": 47.45
+  },
+  "Hồ Cảnh Quan": {
+    "icon": "fa-solid fa-moon",
+    "group": "g2",
+    "top": 32.85,
+    "left": 46.35
+  },
+  "Gym Ngoài Trời": {
+    "icon": "fa-solid fa-person-walking",
+    "group": "g2",
+    "top": 37.55,
+    "left": 44.53
+  },
+  "Vườn Tri Thức": {
+    "icon": "fa-solid fa-book-open",
+    "group": "g2",
+    "top": 47.77,
+    "left": 41.25
+  },
+  "Khu Vui Chơi Trẻ Em": {
+    "icon": "fa-solid fa-children",
+    "group": "g2",
+    "top": 29.48,
+    "left": 48.39
+  },
+  "Bàn Đá Chơi Cờ": {
+    "icon": "fa-solid fa-chess-board",
+    "group": "g2",
+    "top": 40.31,
+    "left": 52.97
+  },
+  "Sân Bóng Đá": {
+    "icon": "fa-solid fa-futbol",
+    "group": "g2",
+    "top": 41.76,
+    "left": 24.9
+  },
+  "Khán Đài Mini": {
+    "icon": "fa-solid fa-users-rectangle",
+    "group": "g2",
+    "top": 32.01,
+    "left": 50.52
+  },
+  "Bồn Cây Kết Hợp Ghế Nghỉ": {
+    "icon": "fa-solid fa-chair",
+    "group": "g2",
+    "top": 32.61,
+    "left": 43.23
+  },
+  "Trường Học Liên Cấp": {
+    "icon": "fa-solid fa-school",
+    "group": "g2",
+    "top": 45.73,
+    "left": 28.44
+  },
+  "Nhà Sinh Hoạt Cộng Đồng": {
+    "icon": "fa-solid fa-house-chimney-user",
+    "group": "g3",
+    "top": 73.04,
+    "left": 77.86
+  },
+  "Trung Tâm Thương Mại Khối Đế": {
+    "icon": "fa-solid fa-building",
+    "group": "g3",
+    "top": 83.03,
+    "left": 57.4
+  },
+  "Hồ Bơi Vô Cực": {
+    "icon": "fa-solid fa-person-swimming",
+    "group": "g3",
+    "top": 73.41,
+    "left": 52.97
+  },
+  "Bể Bơi Trẻ Em": {
+    "icon": "fa-solid fa-person-swimming",
+    "group": "g3",
+    "top": 70.88,
+    "left": 56.2
+  },
+  "Công Viên Cây Xanh": {
+    "icon": "fa-solid fa-tree",
+    "group": "g3",
+    "top": 85.92,
+    "left": 71.88
+  },
+  "Siêu Thị & Shophouse": {
+    "icon": "fa-solid fa-cart-shopping",
+    "group": "g3",
+    "top": 42.36,
+    "left": 35.57
+  },
+  "Dịch Vụ Spa Khối Đế": {
+    "icon": "fa-solid fa-spa",
+    "group": "g3",
+    "top": 87.12,
+    "left": 64.43
+  },
+  "Café – Restaurant Khối Đế": {
+    "icon": "fa-solid fa-mug-hot",
+    "group": "g3",
+    "top": 78.7,
+    "left": 48.85
+  },
+  "Sân Tennis": {
+    "icon": "fa-solid fa-table-tennis-paddle-ball",
+    "group": "g3",
+    "top": 51.5,
+    "left": 30
+  },
+  "Biểu Tượng Dự Án": {
+    "icon": "fa-solid fa-star",
+    "group": "g4",
+    "top": 50.06,
+    "left": 15.21
+  },
+  "Biển Tên Dự Án": {
+    "icon": "fa-solid fa-sign-hanging",
+    "group": "g4",
+    "top": 44.04,
+    "left": 12.24
+  },
+  "Đài Vọng Cảnh 1": {
+    "icon": "fa-solid fa-eye",
+    "group": "g4",
+    "top": 55.48,
+    "left": 17.19
+  },
+  "Đài Vọng Cảnh 2": {
+    "icon": "fa-solid fa-eye",
+    "group": "g4",
+    "top": 66.06,
+    "left": 23.8
+  },
+  "Đài Vọng Cảnh 3": {
+    "icon": "fa-solid fa-eye",
+    "group": "g4",
+    "top": 82.91,
+    "left": 40.99
+  },
+  "Vườn Hoa Bồ Công Anh": {
+    "icon": "fa-solid fa-seedling",
+    "group": "g4",
+    "top": 46.33,
+    "left": 45.89
+  },
+  "Thềm Viễn Cảnh 1": {
+    "icon": "fa-solid fa-binoculars",
+    "group": "g4",
+    "top": 76.05,
+    "left": 31.04
+  },
+  "Thềm Viễn Cảnh 2": {
+    "icon": "fa-solid fa-binoculars",
+    "group": "g4",
+    "top": 81.23,
+    "left": 37.92
+  },
+  "Điểm Nhấn Ánh Dương 1": {
+    "icon": "fa-solid fa-sun",
+    "group": "g4",
+    "top": 59.93,
+    "left": 19.74
+  },
+  "Điểm Nhấn Ánh Dương 2": {
+    "icon": "fa-solid fa-sun",
+    "group": "g4",
+    "top": 71,
+    "left": 26.41
+  },
+  "Khu BBQ Ngoài Trời": {
+    "icon": "fa-solid fa-fire-burner",
+    "group": "g5",
+    "top": 49.46,
+    "left": 53.8
+  },
+  "Vườn Dưỡng Sinh": {
+    "icon": "fa-solid fa-leaf",
+    "group": "g5",
+    "top": 56.92,
+    "left": 54.22
+  },
+  "Vườn Thảo Mộc": {
+    "icon": "fa-solid fa-leaf",
+    "group": "g5",
+    "top": 44.52,
+    "left": 56.15
+  },
+  "Khu Camping": {
+    "icon": "fa-solid fa-campground",
+    "group": "g5",
+    "top": 53.07,
+    "left": 45.73
+  },
+  "Trường Mầm Non": {
+    "icon": "fa-solid fa-school",
+    "group": "g5",
+    "top": 35.38,
+    "left": 52.24
+  },
+  "Sân Bóng Rổ 1": {
+    "icon": "fa-solid fa-basketball",
+    "group": "g5",
+    "top": 38.75,
+    "left": 55.83
+  },
+  "Sân Bóng Rổ 2": {
+    "icon": "fa-solid fa-basketball",
+    "group": "g5",
+    "top": 38.75,
+    "left": 50.1
+  },
+  "Bãi Đỗ Xe 2": {
+    "icon": "fa-solid fa-car",
+    "group": "g5",
+    "top": 31.77,
+    "left": 40.63
+  },
+  "Sân Pickleball": {
+    "icon": "fa-solid fa-table-tennis-paddle-ball",
+    "group": "g5",
+    "top": 49.1,
+    "left": 32.6
+  }
+}

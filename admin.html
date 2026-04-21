@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Admin Panel — Bích Động Lakeside</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"/>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0c1117;--bg2:#151b23;--bg3:#1c2330;--bg4:#242c38;
+  --border:#2a3343;--border2:#354155;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --gold:#f6e493;--gold2:#c9a96e;
+  --teal:#0d9488;--teal2:#14b8a6;
+  --cyan:#22d3ee;--red:#ef4444;--green:#22c55e;--blue:#3b82f6;
+  --sidebar-w:260px;
+  --header-h:60px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);display:flex}
+
+/* ═══ SIDEBAR ═══ */
+.sidebar{width:var(--sidebar-w);height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:100;transition:transform .3s ease}
+.sidebar-brand{padding:20px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.sidebar-brand .logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--teal),var(--teal2));display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:700}
+.sidebar-brand h1{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.sidebar-brand span{font-size:10px;color:var(--text3);font-weight:400;display:block;margin-top:2px;letter-spacing:.02em}
+.sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}
+.nav-section{margin-bottom:20px}
+.nav-section-title{font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);padding:0 10px 8px;display:flex;align-items:center;gap:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--text2);transition:all .2s;margin-bottom:2px;position:relative}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:rgba(13,148,136,.12);color:var(--teal2);font-weight:600}
+.nav-item.active::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:20px;background:var(--teal2);border-radius:0 3px 3px 0}
+.nav-item i{width:18px;text-align:center;font-size:13px;opacity:.7}
+.nav-item.active i{opacity:1}
+.nav-badge{margin-left:auto;background:var(--teal);color:#fff;font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px}
+.sidebar-footer{padding:14px 16px;border-top:1px solid var(--border);font-size:10px;color:var(--text3);display:flex;align-items:center;gap:8px}
+.sidebar-footer .status-dot{width:6px;height:6px;border-radius:50%;background:var(--green);flex-shrink:0}
+
+/* ═══ MAIN ═══ */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.header{height:var(--header-h);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 24px;gap:16px;flex-shrink:0;background:var(--bg2)}
+.header .breadcrumb{font-size:12px;color:var(--text3)}
+.header .breadcrumb b{color:var(--text);font-weight:600}
+.btn-mobile-menu{display:none;background:none;border:none;color:var(--text);font-size:18px;cursor:pointer;padding:8px}
+.header-actions{margin-left:auto;display:flex;gap:10px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-family:inherit;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text);transition:all .2s}
+.btn:hover{background:var(--bg4);border-color:var(--border2)}
+.btn-primary{background:var(--teal);border-color:var(--teal);color:#fff}
+.btn-primary:hover{background:var(--teal2)}
+.btn-danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn-sm{padding:6px 12px;font-size:10px}
+.content{flex:1;overflow-y:auto;padding:24px}
+
+/* ═══ DASHBOARD CARDS ═══ */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:28px}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:20px;transition:all .3s}
+.stat-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.stat-card .stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;margin-bottom:12px}
+.stat-card .stat-value{font-size:26px;font-weight:700;margin-bottom:4px}
+.stat-card .stat-label{font-size:11px;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:.08em}
+
+/* ═══ PANELS ═══ */
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.panel-head h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px}
+.panel-head h3 i{color:var(--teal2);font-size:13px}
+.panel-body{padding:20px}
+
+/* ═══ FILE BROWSER ═══ */
+.path-bar{display:flex;align-items:center;gap:8px;padding:12px 16px;background:var(--bg);border-radius:8px;margin-bottom:16px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2);overflow-x:auto;white-space:nowrap}
+.path-bar .path-seg{cursor:pointer;color:var(--cyan);transition:color .2s}
+.path-bar .path-seg:hover{color:var(--gold);text-decoration:underline}
+.path-bar .path-sep{color:var(--text3);margin:0 2px}
+
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+.file-item{background:var(--bg3);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:all .25s;position:relative}
+.file-item:hover{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.file-item.selected{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(34,211,238,.2)}
+.file-thumb{width:100%;aspect-ratio:1;background:var(--bg);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.file-thumb img{width:100%;height:100%;object-fit:cover}
+.file-thumb .folder-icon{font-size:36px;color:var(--gold2)}
+.file-thumb .file-icon{font-size:28px;color:var(--text3)}
+.file-info{padding:8px 10px}
+.file-info .file-name{font-size:10px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-info .file-size{font-size:9px;color:var(--text3);margin-top:2px}
+.file-check{position:absolute;top:6px;right:6px;width:20px;height:20px;border-radius:50%;border:2px solid rgba(255,255,255,.3);background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s}
+.file-item:hover .file-check,.file-item.selected .file-check{opacity:1}
+.file-item.selected .file-check{background:var(--cyan);border-color:var(--cyan)}
+.file-item.selected .file-check::after{content:'✓';color:#000;font-size:11px;font-weight:700}
+
+/* ═══ IMAGE PREVIEW MODAL ═══ */
+.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;max-width:800px;width:90%;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:modalIn .3s ease}
+@keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-header h4{font-size:14px;font-weight:600}
+.modal-close{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:4px;transition:color .2s}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:20px;overflow-y:auto;flex:1}
+.preview-img{width:100%;max-height:50vh;object-fit:contain;border-radius:8px;background:var(--bg);margin-bottom:16px}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.meta-item{background:var(--bg);border-radius:8px;padding:10px 14px}
+.meta-item .meta-label{font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.meta-item .meta-value{font-size:12px;font-weight:500;color:var(--text);font-family:'JetBrains Mono',monospace;word-break:break-all}
+
+/* ═══ ALBUM MANAGER ═══ */
+.album-list{display:flex;flex-direction:column;gap:12px}
+.album-card{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px;transition:all .2s}
+.album-card:hover{border-color:var(--border2)}
+.album-card-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.album-card-head h4{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+.album-card-head h4 i{color:var(--gold2);font-size:12px}
+.album-thumbs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.album-thumbs::-webkit-scrollbar{height:4px}
+.album-thumbs::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+.album-thumb{width:64px;height:48px;border-radius:6px;overflow:hidden;flex-shrink:0;border:1px solid var(--border);position:relative}
+.album-thumb img{width:100%;height:100%;object-fit:cover}
+.album-thumb .remove-thumb{position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:var(--red);color:#fff;font-size:8px;display:none;align-items:center;justify-content:center;cursor:pointer;border:none}
+.album-thumb:hover .remove-thumb{display:flex}
+.album-count{font-size:10px;color:var(--text3);margin-top:8px}
+
+/* ═══ JSON EDITOR ═══ */
+.json-editor{width:100%;min-height:300px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--cyan);line-height:1.6;resize:vertical;outline:none;tab-size:2}
+.json-editor:focus{border-color:var(--teal)}
+
+/* ═══ TOOLBAR ═══ */
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.toolbar .search-box{flex:1;min-width:200px;display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 12px}
+.toolbar .search-box input{flex:1;background:none;border:none;outline:none;font-family:inherit;font-size:12px;color:var(--text)}
+.toolbar .search-box i{color:var(--text3);font-size:13px}
+.view-toggle{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.view-toggle button{background:var(--bg3);border:none;color:var(--text3);padding:7px 10px;cursor:pointer;font-size:12px;transition:all .2s}
+.view-toggle button.active{background:var(--teal);color:#fff}
+
+/* ═══ TABLE ═══ */
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text3);text-align:left;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--bg)}
+.data-table td{font-size:12px;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.data-table tr:hover td{background:var(--bg3)}
+.data-table .thumb-cell img{width:40px;height:30px;object-fit:cover;border-radius:4px;border:1px solid var(--border)}
+
+/* ═══ TOAST ═══ */
+.toast{position:fixed;bottom:24px;right:24px;z-index:600;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:12px;font-weight:500;color:var(--text);display:none;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:toastIn .3s ease}
+.toast.show{display:flex}
+.toast.success{border-color:var(--green)}
+.toast.success i{color:var(--green)}
+.toast.error{border-color:var(--red)}
+.toast.error i{color:var(--red)}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+
+/* ═══ PAGE SECTIONS (hide/show) ═══ */
+.page{display:none}
+.page.active{display:block}
+
+/* ═══ EMPTY STATE ═══ */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text3)}
+.empty-state i{font-size:40px;margin-bottom:16px;opacity:.3}
+.empty-state p{font-size:13px}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:900px){
+  .sidebar{position:fixed;left:0;top:0;transform:translateX(-100%);z-index:200;box-shadow:4px 0 24px rgba(0,0,0,.4)}
+  .sidebar.open{transform:translateX(0)}
+  .btn-mobile-menu{display:block}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .file-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .meta-grid{grid-template-columns:1fr}
+  .modal-box{width:95%;max-height:85vh}
+}
+@media(max-width:480px){
+  .stats-grid{grid-template-columns:1fr}
+  .content{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">BĐ</div>
+    <div>
+      <h1>Admin Panel</h1>
+      <span>Bích Động Lakeside</span>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">
+      <div class="nav-section-title"><i class="fa-solid fa-gauge"></i> TỔNG QUAN</div>
+      <div class="nav-item active" data-page="dashboard"><i class="fa-solid fa-chart-pie"></i> Dashboard</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title"><i class="fa-solid fa-photo-film"></i> NỘI DUNG</div>
+      <div class="nav-item" data-page="file-browser"><i class="fa-solid fa-folder-open"></i> Quản lý File <span class="nav-badge">NEW</span></div>
+      <div class="nav-item" data-page="albums"><i class="fa-solid fa-images"></i> Album / Thư Viện</div>
+      <div class="nav-item" data-page="vr-config"><i class="fa-solid fa-vr-cardboard"></i> VR 360° Config</div>
+      <div class="nav-item" data-page="hotspot-editor"><i class="fa-solid fa-crosshairs"></i> Hotspot Editor</div>
+      <div class="nav-item" data-page="masterplan"><i class="fa-solid fa-map-location-dot"></i> Master Plan</div>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-title"><i class="fa-solid fa-sliders"></i> CÀI ĐẶT</div>
+      <div class="nav-item" data-page="settings"><i class="fa-solid fa-gear"></i> Cài đặt chung</div>
+      <div class="nav-item" data-page="json-editor"><i class="fa-solid fa-code"></i> JSON Editor</div>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="status-dot"></div> Hệ thống hoạt động bình thường
+  </div>
+</aside>
+
+<!-- ═══ MAIN CONTENT ═══ -->
+<div class="main">
+  <header class="header">
+    <button class="btn-mobile-menu" id="btn-menu"><i class="fa-solid fa-bars"></i></button>
+    <div class="breadcrumb" id="breadcrumb">Admin / <b>Dashboard</b></div>
+    <div class="header-actions">
+      <a href="index.html" target="_blank" class="btn btn-sm"><i class="fa-solid fa-external-link-alt"></i> Xem Website</a>
+    </div>
+  </header>
+
+  <div class="content" id="content">
+
+    <!-- ═══ PAGE: DASHBOARD ═══ -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(13,148,136,.12);color:var(--teal2)"><i class="fa-solid fa-images"></i></div>
+          <div class="stat-value" id="stat-images">—</div>
+          <div class="stat-label">Tổng hình ảnh</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(246,228,147,.1);color:var(--gold)"><i class="fa-solid fa-layer-group"></i></div>
+          <div class="stat-value" id="stat-albums">5</div>
+          <div class="stat-label">Album thư viện</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(59,130,246,.1);color:var(--blue)"><i class="fa-solid fa-street-view"></i></div>
+          <div class="stat-value" id="stat-panos">17</div>
+          <div class="stat-label">PANO 360°</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(239,68,68,.1);color:var(--red)"><i class="fa-solid fa-crosshairs"></i></div>
+          <div class="stat-value" id="stat-hotspots">—</div>
+          <div class="stat-label">Hotspots</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-folder-tree"></i> Cấu trúc thư mục</h3></div>
+        <div class="panel-body">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text2);line-height:2">
+            <div><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> <b>frames/</b></div>
+            <div style="padding-left:20px"><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> 3dvr/ <span style="color:var(--text3)">— Ảnh PANO 360° (17 files)</span></div>
+            <div style="padding-left:20px"><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> day/ <span style="color:var(--text3)">— Frames ngày (75 files)</span></div>
+            <div style="padding-left:20px"><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> night/ <span style="color:var(--text3)">— Frames đêm (75 files)</span></div>
+            <div style="padding-left:20px"><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> galley/ <span style="color:var(--text3)">— Thư viện ảnh + video</span></div>
+            <div style="padding-left:20px"><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> matbang/ <span style="color:var(--text3)">— Ảnh mặt bằng + SVG</span></div>
+            <div style="padding-left:20px"><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> phankhu/ <span style="color:var(--text3)">— Ảnh phân khu + SVG</span></div>
+            <div style="padding-left:20px"><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> tienich/ <span style="color:var(--text3)">— PANO tham quan</span></div>
+            <div style="padding-left:20px"><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> brochur/ <span style="color:var(--text3)">— PDF brochure</span></div>
+            <div><i class="fa-solid fa-folder" style="color:var(--gold2)"></i> <b>data/</b> <span style="color:var(--text3)">— JSON config files</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-clock-rotate-left"></i> Hành động nhanh</h3></div>
+        <div class="panel-body" style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn" onclick="switchPage('file-browser')"><i class="fa-solid fa-folder-open"></i> Duyệt File</button>
+          <button class="btn" onclick="switchPage('albums')"><i class="fa-solid fa-images"></i> Quản lý Album</button>
+          <button class="btn" onclick="switchPage('vr-config')"><i class="fa-solid fa-vr-cardboard"></i> Chỉnh VR Config</button>
+          <button class="btn" onclick="switchPage('json-editor')"><i class="fa-solid fa-code"></i> Sửa JSON</button>
+          <a href="vr-hotspot-editor.html" target="_blank" class="btn"><i class="fa-solid fa-crosshairs"></i> Hotspot Editor (External)</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: FILE BROWSER ═══ -->
+    <div class="page" id="page-file-browser">
+      <div class="toolbar">
+        <div class="search-box"><i class="fa-solid fa-search"></i><input type="text" placeholder="Tìm file..." id="file-search"/></div>
+        <div class="view-toggle">
+          <button class="active" id="view-grid" onclick="setView('grid')"><i class="fa-solid fa-grid-2"></i></button>
+          <button id="view-list" onclick="setView('list')"><i class="fa-solid fa-list"></i></button>
+        </div>
+        <select class="btn" id="filter-type" style="padding:7px 12px;font-size:11px;background:var(--bg3);color:var(--text);border:1px solid var(--border);border-radius:8px">
+          <option value="all">Tất cả</option>
+          <option value="image">Ảnh</option>
+          <option value="video">Video</option>
+          <option value="json">JSON</option>
+          <option value="folder">Thư mục</option>
+        </select>
+      </div>
+      <div class="path-bar" id="path-bar"></div>
+      <div id="file-container"></div>
+    </div>
+
+    <!-- ═══ PAGE: ALBUMS ═══ -->
+    <div class="page" id="page-albums">
+      <div class="panel">
+        <div class="panel-head">
+          <h3><i class="fa-solid fa-images"></i> Quản lý Album Thư Viện</h3>
+          <button class="btn btn-primary btn-sm" onclick="addAlbum()"><i class="fa-solid fa-plus"></i> Thêm Album</button>
+        </div>
+        <div class="panel-body">
+          <div class="album-list" id="album-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: VR CONFIG ═══ -->
+    <div class="page" id="page-vr-config">
+      <div class="panel">
+        <div class="panel-head">
+          <h3><i class="fa-solid fa-vr-cardboard"></i> VR 360° — Cấu hình tiện ích</h3>
+          <button class="btn btn-primary btn-sm" onclick="saveVRConfig()"><i class="fa-solid fa-save"></i> Lưu thay đổi</button>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:12px;color:var(--text3);margin-bottom:16px">Chỉnh lon/lat/FOV cho từng tiện ích khi mở VR 360°. Dữ liệu từ <code style="color:var(--cyan)">vr_config.json</code></p>
+          <div id="vr-config-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: HOTSPOT EDITOR ═══ -->
+    <div class="page" id="page-hotspot-editor">
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-crosshairs"></i> Hotspot Editor</h3></div>
+        <div class="panel-body">
+          <p style="font-size:12px;color:var(--text3);margin-bottom:16px">Dữ liệu từ <code style="color:var(--cyan)">vr-hotspot-data.json</code>. Bạn cũng có thể dùng <a href="vr-hotspot-editor.html" target="_blank" style="color:var(--cyan)">Hotspot Visual Editor</a> để chỉnh bằng giao diện.</p>
+          <div id="hotspot-summary"></div>
+          <textarea class="json-editor" id="hotspot-json" placeholder="Đang tải..."></textarea>
+          <div style="margin-top:12px;display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="saveHotspotJSON()"><i class="fa-solid fa-save"></i> Lưu JSON</button>
+            <button class="btn" onclick="copyToClipboard('hotspot-json')"><i class="fa-solid fa-copy"></i> Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: MASTER PLAN ═══ -->
+    <div class="page" id="page-masterplan">
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-map-location-dot"></i> Master Plan — Vị trí tiện ích</h3></div>
+        <div class="panel-body">
+          <p style="font-size:12px;color:var(--text3);margin-bottom:16px">Chỉnh top/left (%) cho từng tiện ích trên bản đồ tổng quan. Dữ liệu từ <code style="color:var(--cyan)">masterplan.json</code></p>
+          <textarea class="json-editor" id="masterplan-json" placeholder="Đang tải..."></textarea>
+          <div style="margin-top:12px;display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="saveMasterplanJSON()"><i class="fa-solid fa-save"></i> Lưu JSON</button>
+            <button class="btn" onclick="copyToClipboard('masterplan-json')"><i class="fa-solid fa-copy"></i> Copy</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: SETTINGS ═══ -->
+    <div class="page" id="page-settings">
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-gear"></i> Cài đặt chung</h3></div>
+        <div class="panel-body">
+          <div style="display:grid;gap:16px;max-width:500px">
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Tên dự án</label>
+              <input type="text" value="BÍCH ĐỘNG LAKESIDE" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none"/>
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Hotline</label>
+              <input type="text" value="0123456789" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none"/>
+            </div>
+            <div>
+              <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Favicon (path)</label>
+              <input type="text" value="favicon.webp" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none"/>
+            </div>
+            <button class="btn btn-primary" style="width:fit-content"><i class="fa-solid fa-save"></i> Lưu cài đặt</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PAGE: JSON EDITOR ═══ -->
+    <div class="page" id="page-json-editor">
+      <div class="panel">
+        <div class="panel-head">
+          <h3><i class="fa-solid fa-code"></i> JSON Editor — Sửa trực tiếp</h3>
+          <select class="btn btn-sm" id="json-file-select" onchange="loadJSONFile(this.value)">
+            <option value="">— Chọn file —</option>
+            <option value="vr-hotspot-data.json">vr-hotspot-data.json</option>
+            <option value="vr_config.json">vr_config.json</option>
+            <option value="masterplan.json">masterplan.json</option>
+            <option value="buildings.json">buildings.json</option>
+          </select>
+        </div>
+        <div class="panel-body">
+          <textarea class="json-editor" id="json-editor-main" placeholder="Chọn file JSON ở trên để bắt đầu chỉnh sửa..." style="min-height:450px"></textarea>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center">
+            <button class="btn btn-primary" onclick="validateJSON()"><i class="fa-solid fa-check"></i> Validate JSON</button>
+            <button class="btn" onclick="formatJSON()"><i class="fa-solid fa-wand-magic-sparkles"></i> Format</button>
+            <button class="btn" onclick="copyToClipboard('json-editor-main')"><i class="fa-solid fa-copy"></i> Copy</button>
+            <span id="json-status" style="font-size:11px;margin-left:8px"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ IMAGE PREVIEW MODAL ═══ -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h4 id="preview-title">Preview</h4>
+      <button class="modal-close" onclick="closePreview()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <img class="preview-img" id="preview-img" src="" alt=""/>
+      <div class="meta-grid" id="preview-meta"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast"><i class="fa-solid fa-check-circle"></i><span id="toast-text"></span></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  ADMIN PANEL — Bích Động Lakeside
+// ═══════════════════════════════════════════════════════════
+
+// ── File system data (simulated from hosting structure) ──
+var FILE_TREE = {
+  'frames': {
+    _type: 'folder',
+    '3dvr': { _type: 'folder', _files: [
+      'PANO_1_2.jpg','PANO_02_3.jpg','PANO_03_3.jpg','PANO_04_3.jpg','PANO_05_3.jpg',
+      'PANO_06_3.jpg','PANO_07_4.jpg','PANO_08_4.jpg','PANO_09_3.jpg','PANO_11_3.jpg',
+      'PANO_12_3.jpg','PANO_13_3.jpg','PANO_14_3.jpg','PANO_15_3.jpg','PANO_16_3.jpg','PANO_17.jpg'
+    ]},
+    'day': { _type: 'folder', _count: 75, _pattern: 'PANO_{N}_XXXX.webp' },
+    'night': { _type: 'folder', _count: 75, _pattern: 'PANO_{N}_XXXX.webp' },
+    'galley': { _type: 'folder', _files: [
+      '6.jpg','7.jpg','8.jpg','9.jpg','10.jpg','11.jpg','12.jpg','13.jpg',
+      '14.jpg','15.jpg','16.jpg','17.jpg','18.jpg','19.jpg','20.jpg','21.jpg',
+      '22.jpg','23.jpg','24.jpg','PCTT 01.jpg','PCTT 02.jpg','PCTT 03.jpg',
+      'PCTT 04_DAY.jpg','PCTT 04_NIGHT.jpg','videomau.mp4','vitriicon.png'
+    ]},
+    'matbang': { _type: 'folder', _files: ['matbangbackground.jpg','matbang.svg','lot-data.json'] },
+    'phankhu': { _type: 'folder', _files: ['2.1.jpg','phankhu.svg'] },
+    'tienich': { _type: 'folder', _files: ['PANO_1_1.jpg'] },
+    'thamquan': { _type: 'folder', _files: [] },
+    'brochur': { _type: 'folder', _files: [] },
+    'iconmenu': { _type: 'folder', _files: [] },
+    '_files': ['logo.png','logo1.png','masterplan.png']
+  },
+  'data': {
+    _type: 'folder',
+    _files: ['vr_config.json','masterplan.json','buildings.json']
+  },
+  '_root': ['index.html','main.js','matbang.js','thamquan-vr360.js','style.css',
+    'matbang-info.css','thamquan-vr360.css','vitri.css','vitri.js',
+    'vr-hotspot-data.json','favicon.webp','vr-hotspot-editor.html','.htaccess']
+};
+
+var ALBUMS = [
+  { title: 'Phối Cảnh Tổng Quan', images: ['frames/galley/8.jpg','frames/galley/PCTT 01.jpg','frames/galley/PCTT 02.jpg','frames/galley/PCTT 03.jpg','frames/galley/PCTT 04_DAY.jpg','frames/galley/PCTT 04_NIGHT.jpg'] },
+  { title: 'Shophouse 01', images: ['frames/galley/18.jpg','frames/galley/19.jpg','frames/galley/20.jpg','frames/galley/21.jpg'] },
+  { title: 'Shophouse 02', images: ['frames/galley/6.jpg','frames/galley/7.jpg','frames/galley/8.jpg','frames/galley/9.jpg','frames/galley/10.jpg','frames/galley/11.jpg'] },
+  { title: 'Liền Kề', images: ['frames/galley/22.jpg','frames/galley/14.jpg','frames/galley/15.jpg','frames/galley/16.jpg','frames/galley/17.jpg'] },
+  { title: 'Biệt Thự', images: ['frames/galley/12.jpg','frames/galley/13.jpg','frames/galley/23.jpg','frames/galley/24.jpg'] }
+];
+
+var currentPath = [];
+var currentView = 'grid';
+
+// ── Navigation ──
+function switchPage(pageId) {
+  document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n) { n.classList.remove('active'); });
+  var page = document.getElementById('page-' + pageId);
+  if (page) page.classList.add('active');
+  var nav = document.querySelector('.nav-item[data-page="'+pageId+'"]');
+  if (nav) nav.classList.add('active');
+  var titles = { 'dashboard':'Dashboard', 'file-browser':'Quản lý File', 'albums':'Album / Thư Viện',
+    'vr-config':'VR 360° Config', 'hotspot-editor':'Hotspot Editor', 'masterplan':'Master Plan',
+    'settings':'Cài đặt chung', 'json-editor':'JSON Editor' };
+  document.getElementById('breadcrumb').innerHTML = 'Admin / <b>' + (titles[pageId]||pageId) + '</b>';
+  // Init specific pages
+  if (pageId === 'file-browser') { currentPath = []; renderFiles(); }
+  if (pageId === 'albums') renderAlbums();
+  if (pageId === 'vr-config') loadVRConfigTable();
+  if (pageId === 'hotspot-editor') loadHotspotEditor();
+  if (pageId === 'masterplan') loadMasterplan();
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+document.querySelectorAll('.nav-item').forEach(function(item) {
+  item.addEventListener('click', function() { switchPage(this.dataset.page); });
+});
+
+// Mobile menu
+document.getElementById('btn-menu').addEventListener('click', function() {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// ── File Browser ──
+function getFilesAtPath(path) {
+  var items = [];
+  if (path.length === 0) {
+    // Root level
+    Object.keys(FILE_TREE).forEach(function(key) {
+      if (key === '_root') return;
+      if (FILE_TREE[key]._type === 'folder') items.push({ name: key, type: 'folder' });
+    });
+    (FILE_TREE._root || []).forEach(function(f) {
+      items.push({ name: f, type: getFileType(f), size: '—' });
+    });
+  } else {
+    var node = FILE_TREE;
+    for (var i = 0; i < path.length; i++) node = node[path[i]];
+    if (!node) return [];
+    Object.keys(node).forEach(function(key) {
+      if (key.startsWith('_')) return;
+      if (node[key] && node[key]._type === 'folder') items.push({ name: key, type: 'folder' });
+    });
+    (node._files || []).forEach(function(f) {
+      items.push({ name: f, type: getFileType(f), size: '—' });
+    });
+  }
+  return items;
+}
+
+function getFileType(name) {
+  var ext = name.split('.').pop().toLowerCase();
+  if (['jpg','jpeg','png','webp','gif','svg'].includes(ext)) return 'image';
+  if (['mp4','webm','mov'].includes(ext)) return 'video';
+  if (['json'].includes(ext)) return 'json';
+  if (['js'].includes(ext)) return 'js';
+  if (['css'].includes(ext)) return 'css';
+  if (['html','htm'].includes(ext)) return 'html';
+  if (['pdf'].includes(ext)) return 'pdf';
+  return 'file';
+}
+
+function getFullPath(name) {
+  return (currentPath.length > 0 ? currentPath.join('/') + '/' : '') + name;
+}
+
+function renderPathBar() {
+  var html = '<span class="path-seg" onclick="navigateTo(-1)">root</span>';
+  currentPath.forEach(function(seg, i) {
+    html += '<span class="path-sep">/</span><span class="path-seg" onclick="navigateTo('+i+')">' + seg + '</span>';
+  });
+  document.getElementById('path-bar').innerHTML = html;
+}
+
+function navigateTo(index) {
+  if (index < 0) currentPath = [];
+  else currentPath = currentPath.slice(0, index + 1);
+  renderFiles();
+}
+
+function openFolder(name) {
+  currentPath.push(name);
+  renderFiles();
+}
+
+function renderFiles() {
+  renderPathBar();
+  var items = getFilesAtPath(currentPath);
+  var search = (document.getElementById('file-search').value || '').toLowerCase();
+  var filter = document.getElementById('filter-type').value;
+  if (search) items = items.filter(function(f) { return f.name.toLowerCase().includes(search); });
+  if (filter !== 'all') items = items.filter(function(f) { return f.type === filter; });
+  // Sort: folders first
+  items.sort(function(a,b) { if (a.type==='folder' && b.type!=='folder') return -1; if (a.type!=='folder' && b.type==='folder') return 1; return a.name.localeCompare(b.name); });
+
+  var container = document.getElementById('file-container');
+  if (items.length === 0) {
+    container.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open"></i><p>Thư mục trống</p></div>';
+    return;
+  }
+
+  var html = '<div class="file-grid">';
+  items.forEach(function(f) {
+    var fullPath = getFullPath(f.name);
+    var thumbHtml = '';
+    if (f.type === 'folder') {
+      thumbHtml = '<div class="folder-icon"><i class="fa-solid fa-folder"></i></div>';
+    } else if (f.type === 'image') {
+      thumbHtml = '<img src="./' + fullPath + '" alt="' + f.name + '" loading="lazy" onerror="this.style.display=\'none\';this.parentNode.innerHTML=\'<div class=file-icon><i class=fa-solid fa-image></i></div>\'">';
+    } else if (f.type === 'video') {
+      thumbHtml = '<div class="file-icon"><i class="fa-solid fa-video"></i></div>';
+    } else if (f.type === 'json') {
+      thumbHtml = '<div class="file-icon" style="color:var(--gold)"><i class="fa-solid fa-file-code"></i></div>';
+    } else {
+      var iconMap = { js:'fa-brands fa-js', css:'fa-brands fa-css3-alt', html:'fa-brands fa-html5', pdf:'fa-solid fa-file-pdf' };
+      thumbHtml = '<div class="file-icon"><i class="' + (iconMap[f.type]||'fa-solid fa-file') + '"></i></div>';
+    }
+    var onclick = f.type === 'folder' ? 'openFolder(\''+f.name+'\')' : 'previewFile(\''+fullPath+'\',\''+f.type+'\',\''+f.name+'\')';
+    html += '<div class="file-item" onclick="'+onclick+'"><div class="file-thumb">'+thumbHtml+'<div class="file-check"></div></div><div class="file-info"><div class="file-name">'+f.name+'</div><div class="file-size">'+f.type.toUpperCase()+'</div></div></div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+document.getElementById('file-search').addEventListener('input', renderFiles);
+document.getElementById('filter-type').addEventListener('change', renderFiles);
+
+function previewFile(path, type, name) {
+  if (type === 'image') {
+    document.getElementById('preview-title').textContent = name;
+    document.getElementById('preview-img').src = './' + path;
+    document.getElementById('preview-meta').innerHTML =
+      '<div class="meta-item"><div class="meta-label">Đường dẫn</div><div class="meta-value">'+path+'</div></div>' +
+      '<div class="meta-item"><div class="meta-label">Loại</div><div class="meta-value">'+type.toUpperCase()+'</div></div>';
+    document.getElementById('preview-modal').classList.add('open');
+  } else if (type === 'json') {
+    switchPage('json-editor');
+    document.getElementById('json-file-select').value = name;
+    loadJSONFile(name.includes('/') ? name : path);
+  }
+}
+
+function closePreview() { document.getElementById('preview-modal').classList.remove('open'); }
+document.getElementById('preview-modal').addEventListener('click', function(e) {
+  if (e.target === this) closePreview();
+});
+
+// ── Albums ──
+function renderAlbums() {
+  var html = '';
+  ALBUMS.forEach(function(album, idx) {
+    var thumbs = album.images.slice(0, 8).map(function(src) {
+      return '<div class="album-thumb"><img src="./'+src+'" onerror="this.src=\'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22/>\'" alt=""/><button class="remove-thumb" onclick="event.stopPropagation();removeAlbumImage('+idx+',\''+src+'\')">×</button></div>';
+    }).join('');
+    html += '<div class="album-card"><div class="album-card-head"><h4><i class="fa-solid fa-images"></i> '+album.title+'</h4><div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="editAlbumTitle('+idx+')"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-danger" onclick="deleteAlbum('+idx+')"><i class="fa-solid fa-trash"></i></button></div></div><div class="album-thumbs">'+thumbs+'</div><div class="album-count">'+album.images.length+' ảnh</div></div>';
+  });
+  document.getElementById('album-list').innerHTML = html;
+  document.getElementById('stat-albums').textContent = ALBUMS.length;
+}
+
+function editAlbumTitle(idx) {
+  var newTitle = prompt('Tên album mới:', ALBUMS[idx].title);
+  if (newTitle && newTitle.trim()) { ALBUMS[idx].title = newTitle.trim(); renderAlbums(); showToast('Đã cập nhật tên album', 'success'); }
+}
+
+function deleteAlbum(idx) {
+  if (confirm('Xóa album "' + ALBUMS[idx].title + '"?')) { ALBUMS.splice(idx, 1); renderAlbums(); showToast('Đã xóa album', 'success'); }
+}
+
+function removeAlbumImage(albumIdx, src) {
+  ALBUMS[albumIdx].images = ALBUMS[albumIdx].images.filter(function(s) { return s !== src; });
+  renderAlbums();
+}
+
+function addAlbum() {
+  var title = prompt('Tên album mới:');
+  if (title && title.trim()) { ALBUMS.push({ title: title.trim(), images: [] }); renderAlbums(); showToast('Đã thêm album "'+title.trim()+'"', 'success'); }
+}
+
+// ── VR Config ──
+function loadVRConfigTable() {
+  fetch('vr_config.json').then(function(r){return r.json()}).then(function(data) {
+    var vrMap = data.VR_MAP || data;
+    var html = '<table class="data-table"><thead><tr><th>Tiện ích</th><th>PANO</th><th>Lon</th><th>Lat</th><th>FOV</th></tr></thead><tbody>';
+    Object.keys(vrMap).forEach(function(key) {
+      if (key === 'default') return;
+      var c = vrMap[key];
+      var pano = (c.src||'').replace('frames/3dvr/','').replace('.jpg','');
+      html += '<tr><td style="font-weight:600;font-size:11px">'+key+'</td><td style="font-family:JetBrains Mono;font-size:10px;color:var(--cyan)">'+pano+'</td><td>'+c.lon+'</td><td>'+c.lat+'</td><td>'+(c.fov||c.dfov||'—')+'</td></tr>';
+    });
+    html += '</tbody></table>';
+    document.getElementById('vr-config-table').innerHTML = html;
+  }).catch(function() {
+    document.getElementById('vr-config-table').innerHTML = '<p style="color:var(--red);font-size:12px">Không tải được vr_config.json</p>';
+  });
+}
+
+// ── Hotspot Editor ──
+function loadHotspotEditor() {
+  fetch('vr-hotspot-data.json').then(function(r){return r.text()}).then(function(text) {
+    document.getElementById('hotspot-json').value = text;
+    try {
+      var data = JSON.parse(text);
+      var hs = data.hotspots || data;
+      var total = 0;
+      Object.keys(hs).forEach(function(k) { if (Array.isArray(hs[k])) total += hs[k].length; });
+      document.getElementById('stat-hotspots').textContent = total;
+      document.getElementById('hotspot-summary').innerHTML = '<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">Tổng: <b style="color:var(--cyan)">'+total+'</b> hotspots trên <b style="color:var(--gold)">'+Object.keys(hs).length+'</b> PANO</div>';
+    } catch(e) {}
+  }).catch(function() {
+    document.getElementById('hotspot-json').value = '// Không tải được file';
+  });
+}
+
+// ── Masterplan ──
+function loadMasterplan() {
+  fetch('masterplan.json').then(function(r){return r.text()}).then(function(text) {
+    document.getElementById('masterplan-json').value = text;
+  }).catch(function() {
+    document.getElementById('masterplan-json').value = '// Không tải được file';
+  });
+}
+
+// ── JSON Editor ──
+function loadJSONFile(filename) {
+  if (!filename) return;
+  fetch(filename).then(function(r){return r.text()}).then(function(text) {
+    try { text = JSON.stringify(JSON.parse(text), null, 2); } catch(e) {}
+    document.getElementById('json-editor-main').value = text;
+    document.getElementById('json-status').innerHTML = '<span style="color:var(--green)">✓ Đã tải ' + filename + '</span>';
+  }).catch(function() {
+    document.getElementById('json-editor-main').value = '';
+    document.getElementById('json-status').innerHTML = '<span style="color:var(--red)">✗ Không tìm thấy file</span>';
+  });
+}
+
+function validateJSON() {
+  try {
+    JSON.parse(document.getElementById('json-editor-main').value);
+    document.getElementById('json-status').innerHTML = '<span style="color:var(--green)">✓ JSON hợp lệ</span>';
+    showToast('JSON hợp lệ!', 'success');
+  } catch(e) {
+    document.getElementById('json-status').innerHTML = '<span style="color:var(--red)">✗ ' + e.message + '</span>';
+    showToast('Lỗi JSON: ' + e.message, 'error');
+  }
+}
+
+function formatJSON() {
+  try {
+    var obj = JSON.parse(document.getElementById('json-editor-main').value);
+    document.getElementById('json-editor-main').value = JSON.stringify(obj, null, 2);
+    showToast('Đã format JSON', 'success');
+  } catch(e) { showToast('JSON không hợp lệ, không thể format', 'error'); }
+}
+
+// ── Utilities ──
+function copyToClipboard(id) {
+  var el = document.getElementById(id);
+  el.select();
+  document.execCommand('copy');
+  showToast('Đã copy vào clipboard!', 'success');
+}
+
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  t.querySelector('span').textContent = msg;
+  t.querySelector('i').className = type === 'success' ? 'fa-solid fa-check-circle' : 'fa-solid fa-exclamation-circle';
+  t.className = 'toast show ' + (type||'success');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+function saveVRConfig() { showToast('Đã lưu VR Config (copy JSON và upload lên hosting)', 'success'); }
+function saveHotspotJSON() { copyToClipboard('hotspot-json'); showToast('Đã copy Hotspot JSON — paste vào file trên hosting', 'success'); }
+function saveMasterplanJSON() { copyToClipboard('masterplan-json'); showToast('Đã copy Masterplan JSON — paste vào file trên hosting', 'success'); }
+
+// ── Init ──
+(function init() {
+  // Count images
+  var imgCount = 0;
+  function countFiles(node) {
+    if (!node) return;
+    if (node._files) node._files.forEach(function(f) { if (getFileType(f)==='image') imgCount++; });
+    if (node._count) imgCount += node._count;
+    Object.keys(node).forEach(function(k) { if (!k.startsWith('_') && node[k] && node[k]._type) countFiles(node[k]); });
+  }
+  countFiles(FILE_TREE.frames);
+  document.getElementById('stat-images').textContent = imgCount;
+})();
+</script>
+</body>
+</html>

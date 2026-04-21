@@ -1,0 +1,352 @@
+/* ═══════════════════════════════════════════════════════════
+   THAM QUAN VR 360° — Hotspot Styles (v8 — Smaller Labels)
+   ═══════════════════════════════════════════════════════════ */
+
+.thamquan-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 80px;
+  z-index: 55;
+  background: #080c16;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.thamquan-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#tq-vr-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: grab;
+}
+
+#tq-hotspot-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  overflow: hidden;
+}
+
+/* ═══ Hotspot — GPU accelerated positioning ═══ */
+.tq-hs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: auto;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  will-change: transform;
+}
+
+/* ═══ Label — GIẢM SIZE để tránh đè chồng ═══ */
+.tq-hs-label {
+  background: linear-gradient(to bottom, #01434a 0%, #176361 100%);
+  color: #fff;
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  line-height: 1.2;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.tq-hs:hover .tq-hs-label {
+  background: linear-gradient(to bottom, #02585f 0%, #1e7d7a 100%);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.6);
+  white-space: normal;
+  overflow: visible;
+  max-width: 200px;
+  font-size: 10px;
+  padding: 5px 12px;
+  z-index: 100;
+}
+
+.tq-hs-line {
+  width: 1.5px;
+  height: 40px;
+  background: linear-gradient(to bottom, #176361, rgba(23, 99, 97, 0.1));
+  flex-shrink: 0;
+}
+
+.tq-hs-dot {
+  width: 10px;
+  height: 10px;
+  background: #1eb8d0;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow:
+    0 0 8px rgba(30, 184, 208, 0.7),
+    0 0 0 3px rgba(30, 184, 208, 0.2);
+  flex-shrink: 0;
+}
+
+/* ═══ Responsive — Tablet ═══ */
+@media (max-width: 1024px) {
+  .tq-hs-label {
+    font-size: 7.5px;
+    padding: 3px 8px;
+    max-width: 120px;
+    border-radius: 14px;
+    border-width: 1px;
+    line-height: 1.2;
+  }
+  .tq-hs:hover .tq-hs-label {
+    font-size: 8.5px;
+    max-width: 150px;
+  }
+  .tq-hs-line {
+    height: 28px;
+  }
+  .tq-hs-dot {
+    width: 8px;
+    height: 8px;
+    border-width: 1.5px;
+  }
+}
+
+/* ═══ Responsive — Mobile ═══ */
+@media (max-width: 768px) {
+  .thamquan-overlay {
+    bottom: 60px;
+  }
+  .tq-hs-label {
+    font-size: 6.5px;
+    padding: 2px 6px;
+    max-width: 100px;
+    border-radius: 12px;
+    border-width: 1px;
+  }
+  .tq-hs:hover .tq-hs-label {
+    font-size: 7.5px;
+    max-width: 130px;
+  }
+  .tq-hs-line {
+    height: 20px;
+    width: 1px;
+  }
+  .tq-hs-dot {
+    width: 7px;
+    height: 7px;
+    border-width: 1.5px;
+    box-shadow: 0 0 6px rgba(30, 184, 208, 0.6);
+  }
+}
+
+/* ═══ Responsive — Landscape ═══ */
+@media (max-height: 500px) and (orientation: landscape) {
+  .thamquan-overlay {
+    bottom: 50px;
+  }
+  .tq-hs-label {
+    font-size: 6.5px;
+    padding: 2px 6px;
+    max-width: 110px;
+  }
+  .tq-hs-line {
+    height: 18px;
+  }
+}
+/* ═══════════════════════════════════════════════════════════
+   THAM QUAN VR 360° — Compass
+   ═══════════════════════════════════════════════════════════ */
+
+.tq-compass {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 92px;
+  pointer-events: none;
+  user-select: none;
+}
+
+.tq-compass-ring {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 48%, rgba(0,0,0,0.12) 100%),
+    linear-gradient(135deg, rgba(1,67,74,0.88) 0%, rgba(23,99,97,0.92) 100%);
+  border: 1.5px solid rgba(255,255,255,0.24);
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.tq-compass-rose {
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255,255,255,0.14);
+}
+
+.tq-compass-needle {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 2px;
+  height: 30px;
+  transform: translate(-50%, -100%) rotate(0deg);
+  transform-origin: 50% 100%;
+  transition: transform 0.12s linear;
+  background: linear-gradient(to top, rgba(255,255,255,0.22) 0%, #f6e493 35%, #ff6b6b 100%);
+  border-radius: 999px;
+  box-shadow: 0 0 12px rgba(246,228,147,0.18);
+}
+
+.tq-compass-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px rgba(30,184,208,0.22),
+    0 0 12px rgba(255,255,255,0.2);
+}
+
+.tq-compass-mark {
+  position: absolute;
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.88);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tq-mark-n {
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #f6e493;
+}
+
+.tq-mark-e {
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tq-mark-s {
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.tq-mark-w {
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.tq-compass-info {
+  min-width: 82px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(1, 20, 28, 0.72);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.25);
+  text-align: center;
+  line-height: 1.2;
+}
+
+#tq-compass-dir,
+#tq-compass-deg {
+  display: block;
+  font-family: "Be Vietnam Pro", sans-serif;
+}
+
+#tq-compass-dir {
+  font-size: 10px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.08em;
+}
+
+#tq-compass-deg {
+  margin-top: 2px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.68);
+}
+
+@media (max-width: 768px) {
+  .tq-compass {
+    top: 12px;
+    right: 12px;
+    width: 74px;
+    gap: 6px;
+  }
+
+  .tq-compass-ring {
+    width: 74px;
+    height: 74px;
+  }
+
+  .tq-compass-needle {
+    height: 24px;
+  }
+
+  .tq-compass-mark {
+    font-size: 9px;
+  }
+
+  .tq-compass-info {
+    min-width: 68px;
+    padding: 5px 8px;
+  }
+
+  #tq-compass-dir,
+  #tq-compass-deg {
+    font-size: 9px;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .tq-compass {
+    top: 8px;
+    right: 8px;
+    transform: scale(0.9);
+    transform-origin: top right;
+  }
+}

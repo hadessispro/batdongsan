@@ -1,0 +1,680 @@
+{
+  "PANO_1_2": [
+    {
+      "px": 1976,
+      "py": 683,
+      "target": "PANO_1_2",
+      "label": "34. Biểu Tượng Dự Án"
+    },
+    {
+      "px": 1954,
+      "py": 695,
+      "target": "PANO_1_2",
+      "label": "42. Điểm Nhấn Ánh Dương 1"
+    },
+    {
+      "px": 1922,
+      "py": 714,
+      "target": "PANO_15_3",
+      "label": "36. Đài Vọng Cảnh 1"
+    },
+    {
+      "px": 1819,
+      "py": 759,
+      "target": "PANO_16_3",
+      "label": "35. Biển Tên Dự Án"
+    },
+    {
+      "px": 1510,
+      "py": 773,
+      "target": "PANO_16_3",
+      "label": "37. Đài Vọng Cảnh 2"
+    },
+    {
+      "px": 252,
+      "py": 685,
+      "target": "PANO_03_3",
+      "label": "3. Trung Tâm Thương Mại 1"
+    },
+    {
+      "px": 205,
+      "py": 695,
+      "target": "PANO_1_2",
+      "label": "1. Cổng Dự Án"
+    },
+    {
+      "px": 315,
+      "py": 698,
+      "target": "PANO_04_3",
+      "label": "2. Đài Phun Nước"
+    },
+    {
+      "px": 328,
+      "py": 712,
+      "target": "PANO_04_3",
+      "label": "4. Trạm Sạc Xe Điện"
+    },
+    {
+      "px": 361,
+      "py": 696,
+      "target": "PANO_04_3",
+      "label": "5. Bãi Đỗ Xe 1"
+    },
+    {
+      "px": 379,
+      "py": 679,
+      "target": "PANO_05_3",
+      "label": "9. Khu Vui Chơi Trẻ Em"
+    },
+    {
+      "px": 417,
+      "py": 688,
+      "target": "PANO_05_3",
+      "label": "10. Ghế Nghỉ"
+    },
+    {
+      "px": 431,
+      "py": 706,
+      "target": "PANO_05_3",
+      "label": "14. Khán Đài Mini"
+    },
+    {
+      "px": 397,
+      "py": 693,
+      "target": "PANO_05_3",
+      "label": "8. Gym Ngoài Trời"
+    },
+    {
+      "px": 404,
+      "py": 684,
+      "target": "PANO_05_3",
+      "label": "6. Quảng Trường Cây Xanh"
+    },
+    {
+      "px": 430,
+      "py": 665,
+      "target": "PANO_05_3",
+      "label": "13. Hồ Vọng Nguyệt"
+    },
+    {
+      "px": 457,
+      "py": 689,
+      "target": "PANO_05_3",
+      "label": "7. Sân Bóng Đá"
+    },
+    {
+      "px": 503,
+      "py": 729,
+      "target": "PANO_07_4",
+      "label": "15. Khu Nướng BBQ"
+    },
+    {
+      "px": 505,
+      "py": 711,
+      "target": "PANO_07_4",
+      "label": "16. Vườn Dưỡng Sinh"
+    },
+    {
+      "px": 554,
+      "py": 715,
+      "target": "PANO_07_4",
+      "label": "17. Vườn Thảo Mộc"
+    },
+    {
+      "px": 552,
+      "py": 736,
+      "target": "PANO_07_4",
+      "label": "18. Khu Camping"
+    },
+    {
+      "px": 536,
+      "py": 692,
+      "target": "PANO_06_3",
+      "label": "19. Trường Mầm Non"
+    },
+    {
+      "px": 594,
+      "py": 732,
+      "target": "PANO_08_4",
+      "label": "23. Sân Pickleball 1"
+    },
+    {
+      "px": 589,
+      "py": 703,
+      "target": "PANO_07_4",
+      "label": "20. Sân Bóng Rổ 1"
+    },
+    {
+      "px": 610,
+      "py": 711,
+      "target": "PANO_08_4",
+      "label": "22. Bãi Đỗ Xe 2"
+    },
+    {
+      "px": 786,
+      "py": 773,
+      "target": "PANO_09_3",
+      "label": "24. Sân Pickleball 2"
+    },
+    {
+      "px": 831,
+      "py": 748,
+      "target": "PANO_09_3",
+      "label": "25. Bãi Đỗ Xe 3"
+    },
+    {
+      "px": 947,
+      "py": 724,
+      "target": "PANO_13_3",
+      "label": "30. Công Viên Cây Xanh"
+    },
+    {
+      "px": 1011,
+      "py": 669,
+      "target": "PANO_14_3",
+      "label": "26. Nhà Sinh Hoạt Cộng Đồng"
+    },
+    {
+      "px": 1072,
+      "py": 684,
+      "target": "PANO_13_3",
+      "label": "27. Trung Tâm Thương Mại 2"
+    },
+    {
+      "px": 1167,
+      "py": 702,
+      "target": "PANO_12_3",
+      "label": "28. Bể Bơi 1 Chân Toà Nhà Hỗn Hợp"
+    },
+    {
+      "px": 1138,
+      "py": 730,
+      "target": "PANO_13_3",
+      "label": "29. Bể Bơi 2 Chân Toà Nhà Hỗn Hợp"
+    },
+    {
+      "px": 1183,
+      "py": 771,
+      "target": "PANO_11_3",
+      "label": "31. Siêu Thị Khối Đế"
+    },
+    {
+      "px": 1236,
+      "py": 765,
+      "target": "PANO_11_3",
+      "label": "32. Spa Khối Đế"
+    },
+    {
+      "px": 1313,
+      "py": 737,
+      "target": "PANO_16_3",
+      "label": "38. Đài Vọng Cảnh 3"
+    }
+  ],
+  "PANO_02_3": [
+    {
+      "px": 293,
+      "py": 502,
+      "target": "PANO_1_2",
+      "label": "1. Cổng Dự Án"
+    },
+    {
+      "px": 316,
+      "py": 457,
+      "target": "PANO_03_3",
+      "label": "3. Trung Tâm Thương Mại 1"
+    },
+    {
+      "px": 827,
+      "py": 545,
+      "target": "PANO_1_2",
+      "label": "34. Biểu Tượng Dự Án"
+    },
+    {
+      "px": 776,
+      "py": 520,
+      "target": "PANO_1_2",
+      "label": "42. Điểm Nhấn Ánh Dương 1"
+    }
+  ],
+  "PANO_03_3": [
+    {
+      "px": 694,
+      "py": 375,
+      "target": "PANO_1_2",
+      "label": "1. Cổng Dự Án"
+    },
+    {
+      "px": 328,
+      "py": 511,
+      "target": "PANO_04_3",
+      "label": "5. Bãi Đỗ Xe 1"
+    },
+    {
+      "px": 501,
+      "py": 284,
+      "target": "PANO_03_3",
+      "label": "3. Trung Tâm Thương Mại 1"
+    }
+  ],
+  "PANO_04_3": [
+    {
+      "px": 254,
+      "py": 734,
+      "target": "PANO_04_3",
+      "label": "4. Trạm Sạc Xe Điện"
+    },
+    {
+      "px": 1880,
+      "py": 547,
+      "target": "PANO_04_3",
+      "label": "5. Bãi Đỗ Xe 1"
+    },
+    {
+      "px": 1813,
+      "py": 513,
+      "target": "PANO_05_3",
+      "label": "6. Quảng Trường Cây Xanh"
+    },
+    {
+      "px": 38,
+      "py": 496,
+      "target": "PANO_06_3",
+      "label": "19. Trường Mầm Non"
+    },
+    {
+      "px": 1443,
+      "py": 493,
+      "target": "PANO_04_3",
+      "label": "2. Đài Phun Nước"
+    }
+  ],
+  "PANO_05_3": [
+    {
+      "px": 790,
+      "py": 659,
+      "target": "PANO_05_3",
+      "label": "7. Sân Bóng Đá"
+    },
+    {
+      "px": 611,
+      "py": 725,
+      "target": "PANO_05_3",
+      "label": "12. Bàn Đá Chơi Cờ"
+    },
+    {
+      "px": 246,
+      "py": 573,
+      "target": "PANO_05_3",
+      "label": "13. Hồ Vọng Nguyệt"
+    },
+    {
+      "px": 682,
+      "py": 500,
+      "target": "PANO_06_3",
+      "label": "19. Trường Mầm Non"
+    },
+    {
+      "px": 880,
+      "py": 584,
+      "target": "PANO_05_3",
+      "label": "14. Khán Đài Mini"
+    },
+    {
+      "px": 961,
+      "py": 645,
+      "target": "PANO_05_3",
+      "label": "10. Ghế Nghỉ"
+    },
+    {
+      "px": 1409,
+      "py": 591,
+      "target": "PANO_04_3",
+      "label": "5. Bãi Đỗ Xe 1"
+    },
+    {
+      "px": 1363,
+      "py": 552,
+      "target": "PANO_04_3",
+      "label": "4. Trạm Sạc Xe Điện"
+    },
+    {
+      "px": 1450,
+      "py": 532,
+      "target": "PANO_04_3",
+      "label": "2. Đài Phun Nước"
+    },
+    {
+      "px": 50,
+      "py": 644,
+      "target": "PANO_05_3",
+      "label": "8. Gym Ngoài Trời"
+    },
+    {
+      "px": 1869,
+      "py": 667,
+      "target": "PANO_05_3",
+      "label": "11. Vườn Tri Thức"
+    },
+    {
+      "px": 1635,
+      "py": 647,
+      "target": "PANO_05_3",
+      "label": "9. Khu Vui Chơi Trẻ Em"
+    },
+    {
+      "px": 1861,
+      "py": 861,
+      "target": "PANO_05_3",
+      "label": "6. Quảng Trường Cây Xanh"
+    }
+  ],
+  "PANO_06_3": [
+    {
+      "px": 612,
+      "py": 591,
+      "target": "PANO_05_3",
+      "label": "7. Sân Bóng Đá"
+    },
+    {
+      "px": 998,
+      "py": 731,
+      "target": "PANO_05_3",
+      "label": "14. Khán Đài Mini"
+    },
+    {
+      "px": 68,
+      "py": 762,
+      "target": "PANO_05_3",
+      "label": "10. Ghế Nghỉ"
+    },
+    {
+      "px": 316,
+      "py": 635,
+      "target": "PANO_05_3",
+      "label": "12. Bàn Đá Chơi Cờ"
+    },
+    {
+      "px": 159,
+      "py": 610,
+      "target": "PANO_05_3",
+      "label": "6. Quảng Trường Cây Xanh"
+    },
+    {
+      "px": 25,
+      "py": 575,
+      "target": "PANO_05_3",
+      "label": "9. Khu Vui Chơi Trẻ Em"
+    },
+    {
+      "px": 214,
+      "py": 567,
+      "target": "PANO_05_3",
+      "label": "8. Gym Ngoài Trời"
+    },
+    {
+      "px": 360,
+      "py": 558,
+      "target": "PANO_05_3",
+      "label": "13. Hồ Vọng Nguyệt"
+    },
+    {
+      "px": 803,
+      "py": 505,
+      "target": "PANO_06_3",
+      "label": "19. Trường Mầm Non"
+    },
+    {
+      "px": 1712,
+      "py": 551,
+      "target": "PANO_04_3",
+      "label": "4. Trạm Sạc Xe Điện"
+    },
+    {
+      "px": 1851,
+      "py": 573,
+      "target": "PANO_04_3",
+      "label": "5. Bãi Đỗ Xe 1"
+    },
+    {
+      "px": 1782,
+      "py": 528,
+      "target": "PANO_04_3",
+      "label": "2. Đài Phun Nước"
+    }
+  ],
+  "PANO_07_4": [
+    {
+      "px": 1800,
+      "py": 562,
+      "target": "PANO_06_3",
+      "label": "19. Trường Mầm Non"
+    },
+    {
+      "px": 109,
+      "py": 719,
+      "target": "PANO_07_4",
+      "label": "17. Vườn Thảo Mộc"
+    },
+    {
+      "px": 1514,
+      "py": 747,
+      "target": "PANO_07_4",
+      "label": "16. Vườn Dưỡng Sinh"
+    },
+    {
+      "px": 1111,
+      "py": 745,
+      "target": "PANO_07_4",
+      "label": "15. Khu Nướng BBQ"
+    },
+    {
+      "px": 521,
+      "py": 743,
+      "target": "PANO_07_4",
+      "label": "18. Khu Camping"
+    },
+    {
+      "px": 116,
+      "py": 616,
+      "target": "PANO_07_4",
+      "label": "20. Sân Bóng Rổ 1"
+    },
+    {
+      "px": 399,
+      "py": 645,
+      "target": "PANO_07_4",
+      "label": "16. Vườn Dưỡng Sinh"
+    },
+    {
+      "px": 181,
+      "py": 598,
+      "target": "PANO_08_4",
+      "label": "22. Bãi Đỗ Xe 2"
+    },
+    {
+      "px": 1476,
+      "py": 579,
+      "target": "PANO_05_3",
+      "label": "7. Sân Bóng Đá"
+    }
+  ],
+  "PANO_08_4": [
+    {
+      "px": 643,
+      "py": 564,
+      "target": "PANO_08_4",
+      "label": "23. Sân Pickleball 1"
+    },
+    {
+      "px": 49,
+      "py": 619,
+      "target": "PANO_08_4",
+      "label": "22. Bãi Đỗ Xe 2"
+    },
+    {
+      "px": 1456,
+      "py": 558,
+      "target": "PANO_07_4",
+      "label": "20. Sân Bóng Rổ 1"
+    },
+    {
+      "px": 996,
+      "py": 466,
+      "target": "PANO_05_3",
+      "label": "6. Quảng Trường Cây Xanh"
+    },
+    {
+      "px": 1246,
+      "py": 406,
+      "target": "PANO_06_3",
+      "label": "19. Trường Mầm Non"
+    }
+  ],
+  "PANO_09_3": [
+    {
+      "px": 133,
+      "py": 464,
+      "target": "PANO_13_3",
+      "label": "27. Trung Tâm Thương Mại 2"
+    },
+    {
+      "px": 555,
+      "py": 528,
+      "target": "PANO_08_4",
+      "label": "22. Bãi Đỗ Xe 2"
+    },
+    {
+      "px": 715,
+      "py": 516,
+      "target": "PANO_08_4",
+      "label": "23. Sân Pickleball 1"
+    }
+  ],
+  "PANO_11_3": [
+    {
+      "px": 379,
+      "py": 488,
+      "target": "PANO_11_3",
+      "label": "32. Spa Khối Đế"
+    },
+    {
+      "px": 614,
+      "py": 479,
+      "target": "PANO_11_3",
+      "label": "31. Siêu Thị Khối Đế"
+    },
+    {
+      "px": 968,
+      "py": 485,
+      "target": "PANO_11_3",
+      "label": "33. Café Restaurant Khối Đế"
+    }
+  ],
+  "PANO_12_3": [
+    {
+      "px": 662,
+      "py": 625,
+      "target": "PANO_12_3",
+      "label": "28. Bể Bơi 1 Chân Toà Nhà Hỗn Hợp"
+    },
+    {
+      "px": 672,
+      "py": 516,
+      "target": "PANO_13_3",
+      "label": "27. Trung Tâm Thương Mại 2"
+    },
+    {
+      "px": 1207,
+      "py": 613,
+      "target": "PANO_1_2",
+      "label": "42. Điểm Nhấn Ánh Dương 1"
+    }
+  ],
+  "PANO_13_3": [
+    {
+      "px": 300,
+      "py": 546,
+      "target": "PANO_13_3",
+      "label": "27. Trung Tâm Thương Mại 2"
+    },
+    {
+      "px": 500,
+      "py": 540,
+      "target": "PANO_12_3",
+      "label": "28. Bể Bơi 1 Chân Toà Nhà Hỗn Hợp"
+    },
+    {
+      "px": 517,
+      "py": 790,
+      "target": "PANO_13_3",
+      "label": "29. Bể Bơi 2 Chân Toà Nhà Hỗn Hợp"
+    },
+    {
+      "px": 212,
+      "py": 697,
+      "target": "PANO_11_3",
+      "label": "31. Siêu Thị Khối Đế"
+    },
+    {
+      "px": 145,
+      "py": 598,
+      "target": "PANO_11_3",
+      "label": "32. Spa Khối Đế"
+    },
+    {
+      "px": 1358,
+      "py": 665,
+      "target": "PANO_13_3",
+      "label": "30. Công Viên Cây Xanh"
+    },
+    {
+      "px": 1856,
+      "py": 567,
+      "target": "PANO_13_3",
+      "label": "27. Trung Tâm Thương Mại 2"
+    }
+  ],
+  "PANO_14_3": [
+    {
+      "px": 407,
+      "py": 386,
+      "target": "PANO_13_3",
+      "label": "27. Trung Tâm Thương Mại 2"
+    },
+    {
+      "px": 995,
+      "py": 546,
+      "target": "PANO_14_3",
+      "label": "26. Nhà Sinh Hoạt Cộng Đồng"
+    }
+  ],
+  "PANO_15_3": [
+    {
+      "px": 657,
+      "py": 485,
+      "target": "PANO_15_3",
+      "label": "36. Đài Vọng Cảnh 1"
+    },
+    {
+      "px": 1844,
+      "py": 553,
+      "target": "PANO_15_3",
+      "label": "40. Thềm Viễn Cảnh 1"
+    }
+  ],
+  "PANO_16_3": [
+    {
+      "px": 1871,
+      "py": 394,
+      "target": "PANO_11_3",
+      "label": "31. Siêu Thị Khối Đế"
+    },
+    {
+      "px": 561,
+      "py": 494,
+      "target": "PANO_16_3",
+      "label": "37. Đài Vọng Cảnh 2"
+    }
+  ]
+}

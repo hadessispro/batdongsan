@@ -1,0 +1,2193 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <title>BÍCH ĐỘNG LAKESIDE – Toàn Cảnh 360°</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Cormorant+Garamond:wght@600;700&family=Great+Vibes&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="favicon.webp" type="image/png" />
+    <link rel="stylesheet" href="style.css?v=28" />
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link rel="stylesheet" href="vitri.css?v=1" />
+    <link rel="stylesheet" href="thamquan-vr360.css?v=1" />
+    <link rel="stylesheet" href="matbang-info.css?v=1" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <style>
+      .dl-brochure-btn {
+        position: fixed;
+        top: 18px;
+        right: 20px;
+        z-index: 110;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 22px;
+        border-radius: 26px;
+        border: 1.5px solid rgba(246, 228, 147, 0.4);
+        background: linear-gradient(
+          135deg,
+          rgba(1, 67, 74, 0.85) 0%,
+          rgba(23, 99, 97, 0.9) 100%
+        );
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: #f6e493;
+        font-family: "Be Vietnam Pro", sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        pointer-events: auto;
+      }
+      .dl-brochure-btn:hover {
+        background: linear-gradient(
+          135deg,
+          rgba(2, 88, 95, 0.95) 0%,
+          rgba(30, 125, 122, 0.95) 100%
+        );
+        border-color: rgba(246, 228, 147, 0.7);
+        transform: translateY(-2px);
+        box-shadow:
+          0 6px 24px rgba(0, 0, 0, 0.4),
+          0 0 12px rgba(246, 228, 147, 0.15);
+        color: #fff;
+      }
+      .dl-brochure-btn svg {
+        flex-shrink: 0;
+      }
+      @media screen and (max-width: 768px) {
+        .dl-brochure-btn {
+          top: 10px;
+          right: 10px;
+          padding: 7px 14px;
+          font-size: 9px;
+          gap: 5px;
+          border-radius: 20px;
+        }
+        .dl-brochure-btn svg {
+          width: 12px;
+          height: 12px;
+        }
+      }
+      @media screen and (max-height: 500px) and (orientation: landscape) {
+        .dl-brochure-btn {
+          top: 8px;
+          right: 8px;
+          padding: 5px 12px;
+          font-size: 8px;
+        }
+      }
+
+      /* ═══ VIDEO GALLERY ═══ */
+      .vid-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+      .vid-card {
+        border-radius: 14px;
+        overflow: hidden;
+        background: rgba(1, 30, 38, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        cursor: pointer;
+        transition:
+          transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+          box-shadow 0.35s ease;
+      }
+      .vid-card:hover {
+        transform: translateY(-6px);
+        box-shadow:
+          0 16px 48px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(246, 228, 147, 0.2);
+      }
+      .vid-card-thumb {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16/9;
+        overflow: hidden;
+      }
+      .vid-card-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.5s ease;
+      }
+      .vid-card:hover .vid-card-thumb img {
+        transform: scale(1.08);
+      }
+      .vid-card-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0) 40%,
+          rgba(0, 0, 0, 0.45) 100%
+        );
+        pointer-events: none;
+        transition: background 0.3s;
+      }
+      .vid-card:hover .vid-card-overlay {
+        background: linear-gradient(
+          180deg,
+          rgba(0, 0, 0, 0.05) 40%,
+          rgba(0, 0, 0, 0.55) 100%
+        );
+      }
+      .vid-play-btn {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        border: 2.5px solid rgba(255, 255, 255, 0.85);
+        background: rgba(1, 67, 74, 0.65);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: #fff;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        z-index: 2;
+      }
+      .vid-play-btn svg {
+        width: 28px;
+        height: 28px;
+        margin-left: 3px;
+      }
+      .vid-card:hover .vid-play-btn {
+        background: rgba(30, 184, 208, 0.8);
+        border-color: #fff;
+        transform: translate(-50%, -50%) scale(1.12);
+        box-shadow: 0 6px 32px rgba(30, 184, 208, 0.4);
+      }
+      .vid-duration {
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        padding: 3px 8px;
+        background: rgba(0, 0, 0, 0.7);
+        border-radius: 4px;
+        font-family: "Be Vietnam Pro", sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        color: #fff;
+        letter-spacing: 0.03em;
+        z-index: 2;
+      }
+      .vid-card-info {
+        padding: 14px 16px 16px;
+      }
+      .vid-card-title {
+        font-family: "Be Vietnam Pro", sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        margin: 0 0 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .vid-card-desc {
+        font-family: "Be Vietnam Pro", sans-serif;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.5);
+        margin: 0;
+        line-height: 1.4;
+      }
+      .vid-lightbox {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+      }
+      .vid-lightbox.open {
+        display: flex;
+      }
+      .vid-lightbox-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(1, 20, 28, 0.95);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+      }
+      .vid-lightbox-content {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: #000;
+      }
+      .vid-lightbox-content video {
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: #000;
+        object-fit: cover;
+      }
+
+      .vid-lightbox-close {
+        position: absolute;
+        top: 16px;
+        left: 16px;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, 0.4);
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: #fff;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        z-index: 5;
+      }
+
+      .vid-lightbox-close:hover {
+        background: rgba(30, 184, 208, 0.7);
+        border-color: #fff;
+        transform: scale(1.1);
+      }
+      @media screen and (max-width: 1024px) {
+        .vid-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 14px;
+        }
+      }
+      @media screen and (max-width: 768px) {
+        .vid-grid {
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        .vid-play-btn {
+          width: 50px;
+          height: 50px;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        .vid-play-btn svg {
+          width: 22px;
+          height: 22px;
+        }
+        .vid-card-title {
+          font-size: 12px;
+        }
+        .vid-card-desc {
+          font-size: 11px;
+        }
+        .vid-lightbox-content {
+          width: 96vw;
+          border-radius: 10px;
+        }
+        .vid-lightbox-close {
+          top: 10px;
+          left: 10px;
+          width: 36px;
+          height: 36px;
+          font-size: 16px;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        .vid-lightbox-backdrop {
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+          background: rgba(1, 20, 28, 0.98);
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ═══════════════════════════════════════════════════════
+     PRELOAD POOL — 50 frames day + 50 frames night
+     Paste ngay sau thẻ <body> mở, trước <div id="loading">
+     Browser load song song tất cả ngay khi parse HTML
+═══════════════════════════════════════════════════════ -->
+     <div
+      id="img-preload-pool"
+      aria-hidden="true"
+      style="
+        position: absolute;
+        width: 0;
+        height: 0;
+        overflow: hidden;
+        pointer-events: none;
+        opacity: 0;
+        z-index: -1;
+      "
+    >
+      <!-- ── DAY ── -->
+      <img
+        src="frames/day/PANO_01_0001.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_02_0002.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_03_0003.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_04_0004.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_05_0005.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_06_0006.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_07_0007.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_08_0008.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_09_0009.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_10_0010.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_11_0011.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_12_0012.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_13_0013.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_14_0014.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_15_0015.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_16_0016.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_17_0017.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_18_0018.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_19_0019.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_20_0020.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_21_0021.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_22_0022.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_23_0023.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_24_0024.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_25_0025.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_26_0026.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_27_0027.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_28_0028.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_29_0029.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_30_0030.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_31_0031.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_32_0032.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_33_0033.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_34_0034.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_35_0035.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_36_0036.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_37_0037.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_38_0038.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_39_0039.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_40_0040.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_41_0041.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_42_0042.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_43_0043.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_44_0044.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_45_0045.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_46_0046.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_47_0047.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_48_0048.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_49_0049.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_50_0050.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+
+      <!-- Dán tiếp vào sau PANO_50_0050.webp trong block DAY -->
+      <img
+        src="frames/day/PANO_51_0051.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_52_0052.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_53_0053.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_54_0054.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_55_0055.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_56_0056.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_57_0057.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_58_0058.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_59_0059.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_60_0060.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_61_0061.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_62_0062.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_63_0063.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_64_0064.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_65_0065.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_66_0066.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_67_0067.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_68_0068.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_69_0069.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_70_0070.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_71_0071.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_72_0072.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_73_0073.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_74_0074.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/day/PANO_75_0075.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+
+      <!-- ── NIGHT ── -->
+      <img
+        src="frames/night/PANO_01_0001.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_02_0002.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_03_0003.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_04_0004.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_05_0005.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_06_0006.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_07_0007.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_08_0008.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_09_0009.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_10_0010.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_11_0011.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_12_0012.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_13_0013.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_14_0014.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_15_0015.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_16_0016.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_17_0017.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_18_0018.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_19_0019.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_20_0020.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_21_0021.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_22_0022.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_23_0023.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_24_0024.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_25_0025.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_26_0026.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_27_0027.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_28_0028.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_29_0029.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_30_0030.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_31_0031.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_32_0032.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_33_0033.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_34_0034.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_35_0035.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_36_0036.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_37_0037.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_38_0038.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_39_0039.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_40_0040.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_41_0041.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_42_0042.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_43_0043.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_44_0044.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_45_0045.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_46_0046.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_47_0047.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_48_0048.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_49_0049.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_50_0050.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+
+      <img
+        src="frames/night/PANO_51_0051.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_52_0052.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_53_0053.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_54_0054.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_55_0055.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_56_0056.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_57_0057.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_58_0058.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_59_0059.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_60_0060.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_61_0061.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_62_0062.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_63_0063.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_64_0064.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_65_0065.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_66_0066.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_67_0067.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_68_0068.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_69_0069.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_70_0070.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_71_0071.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_72_0072.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_73_0073.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_74_0074.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+      <img
+        src="frames/night/PANO_75_0075.webp"
+        loading="eager"
+        draggable="false"
+        decoding="async"
+      />
+    </div>
+    <div id="loading">
+      <div class="ld-brand">BÍCH ĐỘNG <span class="ls">LAKESIDE</span></div>
+      <div class="ld-sub">Toàn Cảnh 360°</div>
+      <div class="ld-bar-wrap"><div class="ld-bar-fill" id="ldf"></div></div>
+      <div class="ld-status" id="lds">Đang tải…</div>
+    </div>
+
+    <div id="stage"><div id="frame-container"></div></div>
+
+    <div id="dn">
+      <button class="dn-b active" id="btn-day">Tổng Quan Ngày</button>
+      <button class="dn-b" id="btn-night">Tổng Quan Đêm</button>
+    </div>
+
+    <div id="hint">
+      <div class="h-row">
+        <span class="h-ic l">↺</span><span class="h-ic r">↻</span>
+      </div>
+      <div class="h-txt">Kéo chuột hoặc cuộn để xoay · Click để dừng/tiếp</div>
+    </div>
+
+    <div id="mobile-logo" style="display: none">
+      <img src="./frames/logo.png" alt="Bích Động" />
+    </div>
+
+    <div class="Menu_wrapper">
+      <div class="menu-logo"><img src="./frames/logo1.png" alt="" /></div>
+      <div class="menu-list">
+        <li class="menu-item active" id="nav-toan-canh">
+          <a class="menu-link" href="#"
+            ><img src="./frames/iconmenu/360.svg" alt="" />
+            <h1 class="menu-text menu-text-active">TỔNG QUAN</h1></a
+          >
+          <div class="menu-border"></div>
+        </li>
+        <li class="menu-item" id="nav-vi-tri">
+          <a class="menu-link" href="#"
+            ><img src="./frames/iconmenu/eye.svg" alt="" />
+            <h1 class="menu-text">THAM QUAN</h1></a
+          >
+          <div class="menu-border"></div>
+        </li>
+        <li class="menu-item" id="nav-phan-khu">
+          <a class="menu-link" href="#"
+            ><img src="./frames/iconmenu/phankhu.svg" alt="" />
+            <h1 class="menu-text">PHÂN KHU</h1></a
+          >
+          <div class="menu-border"></div>
+        </li>
+        <li class="menu-item" id="nav-360">
+          <a class="menu-link" href="#"
+            ><img src="./frames/iconmenu/vitri.svg" alt="" />
+            <h1 class="menu-text">VỊ TRÍ</h1></a
+          >
+          <div class="menu-border"></div>
+        </li>
+        <li class="menu-item" id="nav-tien-ich">
+          <a class="menu-link" href="#"
+            ><img src="./frames/iconmenu/tienich.svg" alt="" />
+            <h1 class="menu-text">TIỆN ÍCH</h1></a
+          >
+          <div class="menu-border"></div>
+        </li>
+        <li class="menu-item" id="nav-gallery">
+          <a class="menu-link" href="#"
+            ><img src="./frames/iconmenu/matbang.svg" alt="" />
+            <h1 class="menu-text">MẶT BẰNG</h1></a
+          >
+          <div class="menu-border"></div>
+        </li>
+        <li class="menu-item" id="nav-ebrochure">
+          <a class="menu-link" href="#"
+            ><img src="./frames/iconmenu/thuvien.svg" alt="" />
+            <h1 class="menu-text">THƯ VIỆN</h1></a
+          >
+          <div class="menu-border"></div>
+        </li>
+      </div>
+    </div>
+
+    <!-- ── THAM QUAN OVERLAY ── -->
+    <div id="thamquan-overlay" class="thamquan-overlay" style="display: none">
+      <canvas id="tq-vr-canvas"></canvas>
+      <div id="tq-compass" class="tq-compass" aria-hidden="true">
+  <div class="tq-compass-ring">
+    <div class="tq-compass-rose"></div>
+
+    <span class="tq-compass-mark tq-mark-n">B</span>
+    <span class="tq-compass-mark tq-mark-e">Đ</span>
+    <span class="tq-compass-mark tq-mark-s">N</span>
+    <span class="tq-compass-mark tq-mark-w">T</span>
+
+    <div class="tq-compass-needle"></div>
+    <div class="tq-compass-center"></div>
+  </div>
+
+  <div class="tq-compass-info">
+    <span id="tq-compass-dir">BẮC</span>
+    <span id="tq-compass-deg">0°</span>
+  </div>
+</div>
+      <div id="tq-hotspot-container"></div>
+    </div>
+
+    <!-- ── TIỆN ÍCH OVERLAY ── -->
+    <div id="tienich-overlay" class="tienich-overlay" style="display: none">
+      <div class="tienich-img-container">
+        <img
+          src="./frames/tienich/tienichtong.webp"
+          class="tienich-img-bg"
+          alt="tienich"
+        />
+        <div class="tienich-alldot" id="tienich-alldot"></div>
+        <button
+          id="masterplan-export-btn"
+          class="mp-export-btn"
+          style="display: none"
+        >
+          <i class="fas fa-file-export"></i> XUẤT MASTER PLAN JSON
+        </button>
+        <div
+          id="masterplan-dev-toggle"
+          class="mp-dev-toggle"
+          style="display: none"
+        >
+          <span>Edit Mode</span>
+          <label class="switch"
+            ><input type="checkbox" id="mp-dev-checkbox" /><span
+              class="slider round"
+            ></span
+          ></label>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── THƯ VIỆN / E-BROCHURE OVERLAY ── -->
+    <div id="ebrochure-overlay" class="ebrochure-overlay" style="display: none">
+      <!-- PDF flipbook viewer -->
+      <div
+        class="ebr-flip-container"
+        id="ebr-flip-container"
+        style="display: none"
+      >
+        <button class="ebr-flip-btn ebr-flip-prev" id="ebr-flip-prev">❮</button>
+        <div id="ebr-flipbook" class="ebr-flipbook"></div>
+        <button class="ebr-flip-btn ebr-flip-next" id="ebr-flip-next">❯</button>
+      </div>
+
+      <!-- Float badges -->
+      <div class="ebr-float-badge" id="ebr-float-badge">
+        <div class="ebr-float-spinner"></div>
+        <span id="ebr-float-text">Đang tải…</span>
+      </div>
+      <div class="ebr-page-badge" id="ebr-page-badge">
+        <span id="ebr-cur-page">1</span> / <span id="ebr-total-page">1</span>
+      </div>
+
+      <!-- Gallery -->
+      <div class="ebr-gallery" id="ebr-gallery" style="display: none">
+        <div class="hdev-library-container">
+          <div class="hdev-library-header">
+            <div class="hdev-library-titles">
+              <h3 class="hdev-library-title-1">
+                Thư viện dự án Bích Động Lakeside
+              </h3>
+            </div>
+            <div class="hdev-library-tabs">
+              <button class="hdev-library-tab active" data-tab="images">
+                <span class="hdev-library-tab-diamond"></span> HÌNH ẢNH
+              </button>
+              <button class="hdev-library-tab" data-tab="videos">
+                <span class="hdev-library-tab-diamond"></span> VIDEO
+              </button>
+            </div>
+          </div>
+
+          <div class="hdev-library-content">
+            <!-- Tab 1: Albums Grid -->
+            <div
+              class="hdev-library-tab-content active"
+              data-tab-content="images"
+            >
+              <div class="hdev-library-grid">
+                <div class="hdev-library-grid-item" data-album-index="0">
+                  <div class="hdev-library-grid-image">
+                    <img
+                      src="./frames/galley/PCTT 04_DAY.jpg"
+                      alt="Phối cảnh tổng quan"
+                    />
+                    <div class="hdev-library-grid-overlay"></div>
+                    <div class="hdev-library-grid-title">
+                      Phối cảnh tổng quan
+                    </div>
+                  </div>
+                </div>
+                <div class="hdev-library-grid-item wide" data-album-index="1">
+                  <div class="hdev-library-grid-image">
+                    <img src="./frames/galley/6.jpg" alt="Shophouse 01" />
+                    <div class="hdev-library-grid-overlay"></div>
+                    <div class="hdev-library-grid-title">Shophouse 01</div>
+                  </div>
+                </div>
+                <div class="hdev-library-grid-item" data-album-index="2">
+                  <div class="hdev-library-grid-image">
+                    <img src="./frames/galley/20.jpg" alt="Shophouse 02" />
+                    <div class="hdev-library-grid-overlay"></div>
+                    <div class="hdev-library-grid-title">Shophouse 02</div>
+                  </div>
+                </div>
+                <div class="hdev-library-grid-item wide" data-album-index="3">
+                  <div class="hdev-library-grid-image">
+                    <img src="./frames/galley/18.jpg" alt="Liền kề" />
+                    <div class="hdev-library-grid-overlay"></div>
+                    <div class="hdev-library-grid-title">Liền kề</div>
+                  </div>
+                </div>
+                <div class="hdev-library-grid-item wide" data-album-index="4">
+                  <div class="hdev-library-grid-image">
+                    <img src="./frames/galley/13.jpg" alt="Biệt thự" />
+                    <div class="hdev-library-grid-overlay"></div>
+                    <div class="hdev-library-grid-title">Biệt thự</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ═══ Tab 2: Videos — Ecovillage-style Cards ═══ -->
+            <div class="hdev-library-tab-content" data-tab-content="videos">
+              <div class="vid-grid">
+                <div class="vid-card" data-video="./frames/galley/videomau.mp4">
+                  <div class="vid-card-thumb">
+                    <img
+                      src="./frames/galley/PCTT 04_DAY.jpg"
+                      alt="Video Giới Thiệu Dự Án"
+                    />
+                    <div class="vid-card-overlay"></div>
+                    <button class="vid-play-btn" aria-label="Phát video">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                    </button>
+                    <span class="vid-duration">2:30</span>
+                  </div>
+                  <div class="vid-card-info">
+                    <h4 class="vid-card-title">Video Giới Thiệu Dự Án</h4>
+                    <p class="vid-card-desc">
+                      Tổng quan dự án Bích Động Lakeside
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Thêm video card khi có thêm video
+              <div class="vid-card" data-video="./frames/galley/video2.mp4">
+                <div class="vid-card-thumb">
+                  <img src="./frames/galley/thumb2.jpg" alt="Tiện ích nội khu" />
+                  <div class="vid-card-overlay"></div>
+                  <button class="vid-play-btn" aria-label="Phát video">
+                    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  </button>
+                  <span class="vid-duration">1:45</span>
+                </div>
+                <div class="vid-card-info">
+                  <h4 class="vid-card-title">Tiện Ích Nội Khu</h4>
+                  <p class="vid-card-desc">Khám phá hệ sinh thái tiện ích đẳng cấp</p>
+                </div>
+              </div>
+              --></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fullscreen Album Lightbox -->
+        <div
+          id="album-lightbox"
+          style="
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.95);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+          "
+        >
+          <div
+            style="
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              padding: 16px 20px;
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              background: linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0.8),
+                transparent
+              );
+            "
+          >
+            <h3
+              id="alb-lb-title"
+              style="
+                color: #3bfcf0;
+                font-family: &quot;Be Vietnam Pro&quot;, sans-serif;
+                font-size: clamp(14px, 3vw, 22px);
+                font-weight: 700;
+                margin: 0;
+                letter-spacing: 1px;
+                text-transform: uppercase;
+                text-shadow: 0 0 10px rgba(26, 98, 96, 0.8);
+              "
+            ></h3>
+            <div style="display: flex; align-items: center; gap: 12px">
+              <span
+                id="alb-lb-counter"
+                style="
+                  color: rgba(255, 255, 255, 0.7);
+                  font-family: &quot;Be Vietnam Pro&quot;, sans-serif;
+                  font-size: clamp(11px, 2vw, 14px);
+                  font-weight: 500;
+                "
+              ></span>
+              <button
+                id="alb-lb-close"
+                style="
+                  background: rgba(255, 255, 255, 0.1);
+                  border: 1px solid rgba(255, 255, 255, 0.2);
+                  color: white;
+                  width: 36px;
+                  height: 36px;
+                  border-radius: 50%;
+                  cursor: pointer;
+                  font-size: 18px;
+                  font-family: &quot;Be Vietnam Pro&quot;, sans-serif;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                ×
+              </button>
+            </div>
+          </div>
+          <img
+            id="alb-lb-img"
+            style="
+              max-width: 92vw;
+              max-height: 78vh;
+              object-fit: contain;
+              border-radius: 8px;
+              box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+            "
+            src=""
+            alt=""
+          />
+          <button
+            id="alb-lb-prev"
+            style="
+              position: absolute;
+              left: 10px;
+              top: 50%;
+              transform: translateY(-50%);
+              background: rgba(26, 98, 96, 0.5);
+              border: 1px solid #3bfcf0;
+              color: #3bfcf0;
+              width: clamp(36px, 5vw, 50px);
+              height: clamp(36px, 5vw, 50px);
+              border-radius: 50%;
+              cursor: pointer;
+              font-size: clamp(18px, 3vw, 24px);
+              font-family: &quot;Be Vietnam Pro&quot;, sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: all 0.3s;
+            "
+          >
+            ‹
+          </button>
+          <button
+            id="alb-lb-next"
+            style="
+              position: absolute;
+              right: 10px;
+              top: 50%;
+              transform: translateY(-50%);
+              background: rgba(26, 98, 96, 0.5);
+              border: 1px solid #3bfcf0;
+              color: #3bfcf0;
+              width: clamp(36px, 5vw, 50px);
+              height: clamp(36px, 5vw, 50px);
+              border-radius: 50%;
+              cursor: pointer;
+              font-size: clamp(18px, 3vw, 24px);
+              font-family: &quot;Be Vietnam Pro&quot;, sans-serif;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: all 0.3s;
+            "
+          >
+            ›
+          </button>
+          <div
+            id="alb-lb-thumbs"
+            style="
+              position: absolute;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              padding: 10px 16px;
+              background: linear-gradient(
+                to top,
+                rgba(0, 0, 0, 0.85),
+                transparent
+              );
+              display: flex;
+              gap: 6px;
+              overflow-x: auto;
+              justify-content: center;
+              -webkit-overflow-scrolling: touch;
+            "
+          ></div>
+        </div>
+
+        <!-- ═══ Video Lightbox ═══ -->
+        <div id="vid-lightbox" class="vid-lightbox">
+          <div class="vid-lightbox-backdrop"></div>
+          <div class="vid-lightbox-content">
+            <button class="vid-lightbox-close" id="vid-lb-close">×</button>
+            <video id="vid-lb-player" controls autoplay playsinline>
+              <source src="" type="video/mp4" />
+            </video>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nút tải PDF -->
+      <a
+        id="btn-download-pdf"
+        class="dl-brochure-btn"
+        href="./frames/brochur/brochure.pdf"
+        download
+        style="display: none"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+          <polyline points="7 10 12 15 17 10" />
+          <line x1="12" y1="15" x2="12" y2="3" />
+        </svg>
+        <span>TẢI BROCHURE</span>
+      </a>
+
+      <!-- Floating pill buttons -->
+      <div class="ebr-pill-bar" id="ebr-top-bar">
+        <button
+          class="ebr-pill ebr-tab ebr-tab-pdf active"
+          data-pdf="./frames/brochur/brochure.pdf"
+        >
+          BROCHURE <i class="ebr-pill-arrow">∧</i>
+        </button>
+        <button class="ebr-pill ebr-tab ebr-tab-gallery" data-view="gallery">
+          ẢNH VÀ VIDEO<i class="ebr-pill-arrow">∧</i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── MẶT BẰNG OVERLAY ── -->
+    <div id="matbang-overlay" class="matbang-overlay" style="display: none">
+      <div class="mb-viewport" id="mb-viewport">
+        <img
+          src="./frames/matbang/matbangbackground.jpg"
+          alt="Mặt bằng"
+          class="mb-img-bg"
+        />
+        <div class="mb-svg-layer" id="mb-svg-layer"></div>
+      </div>
+    </div>
+
+    <!-- ── PHÂN KHU OVERLAY ── -->
+    <div id="phankhu-overlay" class="phankhu-overlay" style="display: none">
+      <div class="pk-viewport" id="pk-viewport">
+        <div class="pk-canvas" id="pk-canvas">
+          <img
+            src="./frames/phankhu/2.1.jpg"
+            alt="Phối cảnh tổng quan Bích Động Lakeside"
+            class="pk-img-bg"
+          />
+          <div class="pk-svg-layer" id="pk-svg-layer"></div>
+        </div>
+        <div class="pk-tooltip" id="pk-tooltip"></div>
+        <div class="pk-info" id="pk-info">
+          <h3 class="pk-info-title" id="pk-info-title"></h3>
+          <div class="pk-info-line"></div>
+          <div class="pk-info-body" id="pk-info-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── VỊ TRÍ OVERLAY ── -->
+    <div id="vitri-overlay" class="vitri-overlay" style="display: none">
+      <div class="vt-map-wrap" id="vt-map-wrap">
+        <div id="vt-map" style="position:absolute;top:0;left:0;width:100%;height:100%;"></div>
+        <div class="vt-info-card" id="vt-info-card">
+          <h3>Bích Động Lakeside</h3>
+          <p>
+            Khu đô thị dịch vụ thương mại tổng hợp<br />Thị trấn Bích Động, Thị
+            xã Việt Yên, Bắc Giang
+          </p>
+          <div class="vt-coords">21.2674° N · 106.1111° E</div>
+        </div>
+        <div class="vt-nav-hint">Kéo để di chuyển · Cuộn để zoom</div>
+      </div>
+      <div class="vt-lkv" id="vt-lkv" style="display: none">
+        <div class="vt-lkv-img-wrapper" id="vt-lkv-wrapper">
+          <img
+            class="vt-lkv-video"
+            id="vt-lkv-img"
+            src="./frames/galley/anhmau.jpg"
+            alt="Liên kết vùng"
+          />
+        </div>
+        <div class="vt-lkv-hint">Kéo để di chuyển · Chụm để zoom</div>
+      </div>
+      <div class="vt-pill-bar">
+        <button class="vt-pill active" data-view="vitri">
+          VỊ TRÍ DỰ ÁN <i class="vt-pill-arrow">∧</i>
+        </button>
+        <button class="vt-pill" data-view="lkv">
+          LIÊN KẾT VÙNG <i class="vt-pill-arrow">∧</i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ BOTTOM PANEL ══ -->
+    <div class="ti-panel" id="ti-panel" style="display: none">
+      <button class="ti-mobile-toggle" id="ti-mobile-toggle">
+        <span class="ti-toggle-txt">TIỆN ÍCH</span>
+        <i class="ti-toggle-icon">☰</i>
+      </button>
+      <div class="ti-rows-wrap" id="ti-rows-wrap">
+        <div class="ti-panel-row" id="ti-panel-row1">
+          <button class="ti-btn" data-group="g1">
+            <span>CỔNG CHÀO</span><i class="ti-arrow">∧</i>
+          </button>
+          <button class="ti-btn" data-group="g2">
+            <span>QUẢNG TRƯỜNG</span><i class="ti-arrow">∧</i>
+          </button>
+          <button class="ti-btn" data-group="g3">
+            <span>TOÀ NHÀ PHỨC HỢP</span><i class="ti-arrow">∧</i>
+          </button>
+          <button class="ti-btn" data-group="g4">
+            <span>TUYẾN VEN SÔNG</span><i class="ti-arrow">∧</i>
+          </button>
+          <button class="ti-btn" data-group="g5">
+            <span>TIỆN ÍCH SINH THÁI</span><i class="ti-arrow">∧</i>
+          </button>
+        </div>
+      </div>
+      <div class="ti-popup" id="ti-popup" style="display: none">
+        <div class="ti-popup-items" id="ti-popup-items"></div>
+      </div>
+    </div>
+
+    <!-- ── PHÂN KHU MOBILE DISABLED ── -->
+    <div
+      id="pk-mobile-disabled-overlay"
+      class="pk-mobile-disabled-overlay"
+      style="display: none"
+    >
+      <div class="pk-disabled-content">
+        <img src="./frames/logo.png" alt="Logo" class="pk-disabled-logo" />
+        <h2 class="pk-disabled-title">CHỨC NĂNG PHÂN KHU</h2>
+        <p class="pk-disabled-desc">
+          Để có trải nghiệm tốt nhất và quan sát chi tiết sơ đồ phân khu, vui
+          lòng sử dụng <b>Máy tính (PC/Laptop)</b>.
+        </p>
+        <button id="pk-disabled-back"><span>QUAY LẠI</span></button>
+      </div>
+    </div>
+
+    <!-- ── MOBILE ORIENTATION ── -->
+    <div id="mobile-orient-overlay" class="mobile_wrapper">
+      <div class="mo-content">
+        <img src="./frames/logo.png" class="mo-logo" alt="Logo" />
+        <div class="mo-icon-wrap">
+          <div class="mo-phone-icon"><div class="mo-phone-screen"></div></div>
+          <div class="mo-spinner-wrap">
+            <svg class="mo-circle-svg" viewBox="0 0 100 100">
+              <circle class="mo-circle-bg" cx="50" cy="50" r="45"></circle>
+              <circle
+                id="mo-circle-fill"
+                class="mo-circle-fill"
+                cx="50"
+                cy="50"
+                r="45"
+              ></circle>
+            </svg>
+          </div>
+        </div>
+        <div class="mo-text-wrap">
+          <h2 class="mo-title">BÍCH ĐỘNG LAKESIDE</h2>
+          <p class="mo-desc">
+            Vui lòng <b>Xoay Ngang Màn Hình</b><br />Để Trải Nghiệm Toàn Cảnh
+            360° Tốt Nhất
+          </p>
+        </div>
+        <div class="mo-loading-wrap">
+          <div class="mo-progress-bar"><div id="mo-bar-fill"></div></div>
+          <div id="mo-status">Đang chuẩn bị...</div>
+        </div>
+        <button id="btn-close-orient" disabled>
+          <span id="btn-orient-text">Đang tải 0%</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ VR 360° VIEWER MODAL ══ -->
+    <div id="vr-modal" style="display: none">
+      <div id="vr-header">
+        <div id="vr-title"><span id="vr-title-text">Tham Quan 360°</span></div>
+        <button id="vr-close">✕</button>
+      </div>
+      <canvas id="vr-canvas"></canvas>
+      <div id="vr-hs-container"></div>
+      <div id="vr-minimap">
+        <div id="vr-minimap-card">
+          <div id="vr-minimap-img-wrap">
+            <img
+              id="vr-minimap-img"
+              src="./frames/tienich/minimap.webp"
+              alt="Minimap"
+              draggable="false"
+            />
+            <div id="vr-minimap-dot"></div>
+            <div id="vr-minimap-pulse"></div>
+          </div>
+          <div id="vr-minimap-label"></div>
+        </div>
+        <button id="vr-minimap-toggle" title="Ẩn/Hiện bản đồ">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M3 9h18M9 3v18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <style>
+      #vr-hs-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 10;
+        overflow: hidden;
+      }
+      .vr-hs {
+        position: absolute;
+        pointer-events: auto;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform: translate(-50%, -50%);
+        transition: opacity 0.15s;
+      }
+      .vr-hs-dot {
+        width: 20px;
+        height: 20px;
+        background: radial-gradient(
+          circle,
+          #1eb8d0 40%,
+          rgba(30, 184, 208, 0.3) 100%
+        );
+        border: 2px solid rgba(255, 255, 255, 0.7);
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(30, 184, 208, 0.5);
+        animation: vrHsPulse 2s ease-in-out infinite;
+        transition: transform 0.2s;
+      }
+      .vr-hs:hover .vr-hs-dot {
+        transform: scale(1.3);
+        box-shadow: 0 0 18px rgba(30, 184, 208, 0.8);
+      }
+      .vr-hs-label {
+        margin-top: 5px;
+        padding: 3px 10px;
+        background: rgba(1, 40, 45, 0.85);
+        backdrop-filter: blur(6px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        font-family: "Be Vietnam Pro", sans-serif;
+        font-size: 9px;
+        font-weight: 600;
+        color: #fff;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      }
+      .vr-hs:hover .vr-hs-label {
+        background: rgba(1, 50, 55, 0.95);
+        border-color: rgba(30, 184, 208, 0.4);
+      }
+      @keyframes vrHsPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 10px rgba(30, 184, 208, 0.5);
+        }
+        50% {
+          box-shadow:
+            0 0 10px rgba(30, 184, 208, 0.5),
+            0 0 0 6px rgba(30, 184, 208, 0);
+        }
+      }
+      #vr-minimap {
+        position: absolute;
+        top: 60px;
+        right: 16px;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+      }
+      #vr-minimap-card {
+        width: 220px;
+        height: 220px;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        box-shadow:
+          0 8px 32px rgba(0, 0, 0, 0.5),
+          inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        background: rgba(1, 20, 28, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition:
+          opacity 0.3s,
+          transform 0.3s;
+        transform-origin: top right;
+      }
+      #vr-minimap-card.minimap-hidden {
+        opacity: 0;
+        transform: scale(0.5);
+        pointer-events: none;
+      }
+      #vr-minimap-img-wrap {
+        position: relative;
+        width: 100%;
+        height: 190px;
+        overflow: hidden;
+      }
+      #vr-minimap-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+      #vr-minimap-dot {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: #1eb8d0;
+        border: 2.5px solid #fff;
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 0 8px rgba(30, 184, 208, 0.7);
+        z-index: 3;
+        transition:
+          top 0.5s ease,
+          left 0.5s ease;
+        top: 50%;
+        left: 50%;
+      }
+      #vr-minimap-pulse {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        border: 2px solid rgba(30, 184, 208, 0.5);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        pointer-events: none;
+        top: 50%;
+        left: 50%;
+        animation: mmPulse 2s ease-out infinite;
+        transition:
+          top 0.5s ease,
+          left 0.5s ease;
+      }
+      @keyframes mmPulse {
+        0% {
+          width: 12px;
+          height: 12px;
+          opacity: 1;
+        }
+        100% {
+          width: 40px;
+          height: 40px;
+          opacity: 0;
+        }
+      }
+      #vr-minimap-label {
+        padding: 5px 10px;
+        text-align: center;
+        font-family: "Be Vietnam Pro", sans-serif;
+        font-size: 9px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.7);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      #vr-minimap-toggle {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1.5px solid rgba(255, 255, 255, 0.15);
+        background: rgba(1, 20, 28, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+      }
+      #vr-minimap-toggle:hover {
+        background: rgba(1, 30, 38, 0.95);
+        color: #fff;
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+      @media (max-width: 768px) {
+        #vr-minimap {
+          top: 50px;
+          right: 8px;
+        }
+        #vr-minimap-card {
+          width: 150px;
+          height: 150px;
+        }
+        #vr-minimap-img-wrap {
+          height: 125px;
+        }
+        #vr-minimap-label {
+          font-size: 8px;
+          padding: 3px 6px;
+        }
+        #vr-minimap-toggle {
+          width: 30px;
+          height: 30px;
+          border-radius: 8px;
+        }
+        #vr-minimap-toggle svg {
+          width: 14px;
+          height: 14px;
+        }
+      }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="thamquan-vr360.js?v=2"></script>
+    <script src="tienich-editor.js?v=1"></script>
+    <script src="main.js?v=37"></script>
+    <script src="matbang.js?v=1"></script>
+    <script src="vitri.js?v=2"></script>
+
+    <!-- ═══ Video Lightbox JS ═══ -->
+    <script>
+      (function initVideoLightbox() {
+        var lb = document.getElementById("vid-lightbox");
+        var player = document.getElementById("vid-lb-player");
+        var closeBtn = document.getElementById("vid-lb-close");
+        var backdrop = lb ? lb.querySelector(".vid-lightbox-backdrop") : null;
+        if (!lb || !player) return;
+        document.querySelectorAll(".vid-card").forEach(function (card) {
+          card.addEventListener("click", function () {
+            var src = this.getAttribute("data-video");
+            if (!src) return;
+            player.querySelector("source").src = src;
+            player.load();
+            lb.classList.add("open");
+            document.body.style.overflow = "hidden";
+            player.play().catch(function () {});
+          });
+        });
+        function closeLightbox() {
+          player.pause();
+          player.currentTime = 0;
+          player.querySelector("source").src = "";
+          lb.classList.remove("open");
+          document.body.style.overflow = "";
+        }
+        if (closeBtn) closeBtn.addEventListener("click", closeLightbox);
+        if (backdrop) backdrop.addEventListener("click", closeLightbox);
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && lb.classList.contains("open"))
+            closeLightbox();
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,288 @@
+/* ═══════════════════════════════════════════════════════════
+   MẶT BẰNG — Viewport + Wrapper + Info Panel
+   ═══════════════════════════════════════════════════════════ */
+
+/* §1 VIEWPORT */
+.mb-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #01434a 0%, #011d23 100%);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* §2 WRAPPER */
+.mb-content-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+/* §3 ẢNH */
+.mb-img-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  display: block;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* §4 SVG LAYER */
+.mb-svg-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.mb-svg-layer svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.mb-svg-layer svg .mb-lot {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* §5 NÚT ĐÓNG TRONG INFO PANEL */
+.mb-info-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.mb-info-close:hover,
+.mb-info-close:active {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+/* §6 INFO PANEL — Desktop */
+.mb-info {
+  position: absolute;
+  z-index: 20;
+  width: 280px;
+  background: rgba(1, 20, 28, 0.95);
+  border: 1px solid rgba(246, 228, 147, 0.4);
+  border-radius: 14px;
+  padding: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translate(-50%, -100%) translateY(-10px);
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+  pointer-events: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+.mb-info.visible {
+  opacity: 1;
+  transform: translate(-50%, -100%) translateY(-6px);
+  pointer-events: auto;
+}
+
+/* Khi lot ở gần trên cùng → hiện panel phía dưới thay vì phía trên */
+.mb-info.mb-info-below {
+  transform: translate(-50%, 10px);
+}
+.mb-info.mb-info-below.visible {
+  transform: translate(-50%, 14px);
+}
+
+.mb-info-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.mb-info-title {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+  background: linear-gradient(
+    135deg,
+    #ffd54f 0%,
+    #ffecb3 40%,
+    #ffc107 70%,
+    #ffb300 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.mb-info-tag {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+.mb-tag-lk {
+  background: rgba(30, 184, 208, 0.15);
+  color: #5cd4e8;
+  border: 1px solid rgba(30, 184, 208, 0.3);
+}
+.mb-tag-sh {
+  background: rgba(246, 228, 147, 0.12);
+  color: #f6e493;
+  border: 1px solid rgba(246, 228, 147, 0.3);
+}
+.mb-tag-bt {
+  background: rgba(201, 169, 110, 0.15);
+  color: #c9a96e;
+  border: 1px solid rgba(201, 169, 110, 0.35);
+}
+
+.mb-info-grid {
+  padding: 10px 18px;
+}
+.mb-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+.mb-info-row:last-child {
+  border-bottom: none;
+}
+.mb-info-label {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+}
+.mb-info-value {
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.92);
+  text-align: right;
+}
+.mb-info-foot {
+  padding: 10px 18px 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-family: "Be Vietnam Pro", sans-serif;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+}
+.mb-info-block-name {
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+/* §7 MOBILE — bottom sheet cố định */
+@media screen and (max-width: 1024px) {
+  .mb-viewport {
+    touch-action: none;
+  }
+
+  .mb-info {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 70px !important;
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-height: 50vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    /* Reset desktop transform */
+    transform: translateY(20px) !important;
+    border-radius: 16px;
+    background: rgba(1, 20, 28, 0.98);
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(246, 228, 147, 0.35);
+    opacity: 0;
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease !important;
+    pointer-events: none;
+  }
+  .mb-info.visible {
+    opacity: 1;
+    transform: translateY(0) !important;
+    pointer-events: auto;
+  }
+
+  .mb-info-head {
+    padding: 14px 14px 10px;
+    position: sticky;
+    top: 0;
+    background: rgba(1, 20, 28, 0.98);
+    z-index: 2;
+  }
+  .mb-info-title {
+    font-size: 20px;
+  }
+  .mb-info-tag {
+    font-size: 8px;
+    padding: 3px 8px;
+  }
+  .mb-info-grid {
+    padding: 6px 14px;
+  }
+  .mb-info-row {
+    padding: 6px 0;
+  }
+  .mb-info-label {
+    font-size: 11px;
+  }
+  .mb-info-value {
+    font-size: 12px;
+  }
+  .mb-info-foot {
+    padding: 8px 14px 14px;
+    font-size: 9px;
+  }
+
+  .mb-info-close {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+}
+
+/* §8 Landscape */
+@media screen and (max-height: 500px) and (orientation: landscape) {
+  .mb-info {
+    position: fixed !important;
+    top: 8px !important;
+    bottom: auto !important;
+    right: 8px !important;
+    left: auto !important;
+    width: 260px !important;
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    transform: none !important;
+  }
+  .mb-info.visible {
+    transform: none !important;
+  }
+}
