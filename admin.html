@@ -153,8 +153,8 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
 .data-table td{font-size:12px;padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
 .data-table tr:hover td{background:var(--bg3)}
 .data-table .thumb-cell img{width:40px;height:30px;object-fit:cover;border-radius:4px;border:1px solid var(--border)}
-.data-table input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:inherit;font-size:12px;padding:8px 10px;outline:none}
-.data-table input:focus{border-color:var(--teal)}
+.data-table input,.data-table select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:inherit;font-size:12px;padding:8px 10px;outline:none}
+.data-table input:focus,.data-table select:focus{border-color:var(--teal)}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
 .field label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.08em;text-transform:uppercase;display:block;margin-bottom:6px}
 .field input,.field textarea,.field select{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:12px;padding:10px 12px;outline:none}
@@ -339,9 +339,10 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
           <div class="album-list" id="album-list"></div>
           <div style="margin-top:18px;display:flex;gap:10px;align-items:center">
             <button class="btn btn-primary" onclick="saveLibraryData()"><i class="fa-solid fa-save"></i> Lưu thư viện</button>
-            <button class="btn" onclick="addVideoItem()"><i class="fa-solid fa-video"></i> Thêm video</button>
-            <button class="btn" onclick="uploadLibraryVideo()"><i class="fa-solid fa-upload"></i> Upload video</button>
+            <button class="btn" onclick="addVideoItem()"><i class="fa-solid fa-video"></i> Chọn video đã upload</button>
+            <button class="btn" onclick="uploadLibraryVideo()"><i class="fa-solid fa-upload"></i> Upload & thêm video</button>
           </div>
+          <div id="video-picker" style="margin-top:12px;display:none"></div>
           <div id="video-list" style="margin-top:16px"></div>
         </div>
       </div>
@@ -688,6 +689,114 @@ var ALBUMS = [
 var LIBRARY_DATA = { albums: ALBUMS, videos: [] };
 var libraryLoaded = false;
 var pendingLibraryUpload = null;
+var libraryVideoPickerItems = [];
+
+function normalizeAssetPathInput(path) {
+  return String(path || '').trim().replace(/^\.?\//, '');
+}
+
+function filenameFromPath(path) {
+  return normalizeAssetPathInput(path).split('/').pop() || '';
+}
+
+function humanizeVideoTitle(value) {
+  var base = String(value || '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+  return base || 'Video mới';
+}
+
+function escapeHtml(value) {
+  return String(value == null ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function getLibraryImageOptions() {
+  var seen = {};
+  var options = [];
+  ALBUMS.forEach(function(album) {
+    var cover = normalizeAssetPathInput(album.cover || '');
+    if (cover && !seen[cover]) {
+      seen[cover] = true;
+      options.push(cover);
+    }
+    (album.images || []).forEach(function(src) {
+      src = normalizeAssetPathInput(src);
+      if (src && !seen[src]) {
+        seen[src] = true;
+        options.push(src);
+      }
+    });
+  });
+  return options;
+}
+
+function getDefaultVideoThumb() {
+  var options = getLibraryImageOptions();
+  return options[0] || '';
+}
+
+function getVideoThumbOptions(selectedThumb) {
+  var options = getLibraryImageOptions();
+  var selected = normalizeAssetPathInput(selectedThumb || '');
+  if (selected && options.indexOf(selected) === -1) options.unshift(selected);
+  if (!options.length) {
+    return '<option value="">Chưa có ảnh thư viện</option>';
+  }
+  return options.map(function(src) {
+    return '<option value="' + escapeHtml(src) + '"' + (src === selected ? ' selected' : '') + '>' + escapeHtml(filenameFromPath(src)) + '</option>';
+  }).join('');
+}
+
+function buildLibraryVideo(src, name, title) {
+  var cleanSrc = normalizeAssetPathInput(src);
+  return {
+    title: (title && title.trim()) || humanizeVideoTitle(name || filenameFromPath(cleanSrc)),
+    src: cleanSrc,
+    thumb: getDefaultVideoThumb(),
+    description: ''
+  };
+}
+
+function persistLibraryData(successMessage) {
+  LIBRARY_DATA.albums = ALBUMS;
+  return apiSave('library', LIBRARY_DATA).then(function() {
+    if (successMessage) showToast(successMessage, 'success');
+  });
+}
+
+function closeVideoPicker() {
+  libraryVideoPickerItems = [];
+  var picker = document.getElementById('video-picker');
+  if (!picker) return;
+  picker.style.display = 'none';
+  picker.innerHTML = '';
+}
+
+function renderVideoPicker() {
+  var picker = document.getElementById('video-picker');
+  if (!picker) return;
+  if (!libraryVideoPickerItems.length) {
+    closeVideoPicker();
+    return;
+  }
+  var html = '<div class="panel" style="background:transparent;border-color:var(--border);margin-top:0">' +
+    '<div class="panel-head"><h3><i class="fa-solid fa-film"></i> Chọn video đã upload trong frames/galley</h3>' +
+    '<button class="btn btn-sm" onclick="closeVideoPicker()"><i class="fa-solid fa-xmark"></i> Đóng</button></div>' +
+    '<div class="panel-body"><table class="data-table"><thead><tr><th>Tên file</th><th>Đường dẫn</th><th></th></tr></thead><tbody>';
+  libraryVideoPickerItems.forEach(function(item, idx) {
+    html += '<tr>' +
+      '<td>' + escapeHtml(humanizeVideoTitle(item.name)) + '</td>' +
+      '<td style="font-family:JetBrains Mono;color:var(--cyan)">' + escapeHtml(item.path) + '</td>' +
+      '<td><button class="btn btn-sm btn-primary" onclick="addUploadedVideo(' + idx + ')"><i class="fa-solid fa-plus"></i> Thêm</button></td>' +
+      '</tr>';
+  });
+  html += '</tbody></table></div></div>';
+  picker.innerHTML = html;
+  picker.style.display = 'block';
+}
 
 var currentPath = ['frames'];
 var currentView = 'grid';
@@ -936,9 +1045,8 @@ function uploadAlbumImage(idx) {
 }
 
 function uploadLibraryVideo() {
-  var title = prompt('Tên video:');
-  if (!title) return;
-  pendingLibraryUpload = { type: 'video', title: title.trim() };
+  pendingLibraryUpload = { type: 'video' };
+  closeVideoPicker();
   var input = document.getElementById('library-upload-input');
   input.accept = 'video/mp4,video/webm,video/quicktime';
   input.click();
@@ -957,12 +1065,13 @@ document.getElementById('library-upload-input').addEventListener('change', funct
       if (!ALBUMS[pending.albumIdx].cover) ALBUMS[pending.albumIdx].cover = saved.path;
       LIBRARY_DATA.albums = ALBUMS;
       showToast('Đã upload ảnh vào album', 'success');
+      renderAlbums();
     } else if (pending.type === 'video') {
       LIBRARY_DATA.videos = LIBRARY_DATA.videos || [];
-      LIBRARY_DATA.videos.push({ title: pending.title || saved.name, src: saved.path, thumb: '', description: '' });
-      showToast('Đã upload video vào thư viện', 'success');
+      LIBRARY_DATA.videos.push(buildLibraryVideo(saved.path, saved.name, pending.title || humanizeVideoTitle(saved.name)));
+      renderAlbums();
+      return persistLibraryData('Đã upload video vào thư viện');
     }
-    renderAlbums();
   }).catch(function(e) { showToast(e.message, 'error'); });
 });
 
@@ -970,11 +1079,22 @@ function renderVideos() {
   var videos = LIBRARY_DATA.videos || [];
   var html = '<div class="panel" style="background:transparent;border-color:var(--border);margin-top:0"><div class="panel-head"><h3><i class="fa-solid fa-video"></i> Video thư viện</h3></div><div class="panel-body">';
   if (!videos.length) {
-    html += '<p style="font-size:12px;color:var(--text3)">Chưa có video. Bấm "Thêm video" để thêm đường dẫn mp4/webm sau khi upload file vào frames/galley.</p>';
+    html += '<p style="font-size:12px;color:var(--text3)">Chưa có video. Hãy bấm "Upload & thêm video" để tải file lên. Sau đó hệ thống sẽ tự lưu đường dẫn và tự chọn ảnh đại diện mặc định.</p>';
   } else {
-    html += '<table class="data-table"><thead><tr><th>Tiêu đề</th><th>File</th><th></th></tr></thead><tbody>';
+    html += '<table class="data-table"><thead><tr><th>Tiêu đề</th><th>File</th><th>Thumbnail</th><th></th></tr></thead><tbody>';
     videos.forEach(function(v, i) {
-      html += '<tr><td>'+v.title+'</td><td style="font-family:JetBrains Mono;color:var(--cyan)">'+v.src+'</td><td><button class="btn btn-sm btn-danger" onclick="deleteVideoItem('+i+')"><i class="fa-solid fa-trash"></i></button></td></tr>';
+      var currentThumb = normalizeAssetPathInput(v.thumb || '') || getDefaultVideoThumb();
+      html += '<tr>' +
+        '<td><input type="text" value="' + escapeHtml(v.title || humanizeVideoTitle(v.src)) + '" onchange="updateVideoTitle(' + i + ', this.value)" placeholder="Tên video" /></td>' +
+        '<td style="font-family:JetBrains Mono;color:var(--cyan)">' + escapeHtml(v.src) + '</td>' +
+        '<td>' +
+          '<div style="display:flex;align-items:center;gap:10px">' +
+            (currentThumb ? '<img src="' + escapeHtml(currentThumb) + '" alt="" style="width:60px;height:42px;object-fit:cover;border-radius:6px;border:1px solid var(--border)" />' : '<div style="width:60px;height:42px;border:1px dashed var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:10px">No thumb</div>') +
+            '<select onchange="updateVideoThumb(' + i + ', this.value)">' + getVideoThumbOptions(currentThumb) + '</select>' +
+          '</div>' +
+        '</td>' +
+        '<td><button class="btn btn-sm btn-danger" onclick="deleteVideoItem(' + i + ')"><i class="fa-solid fa-trash"></i></button></td>' +
+      '</tr>';
     });
     html += '</tbody></table>';
   }
@@ -983,27 +1103,58 @@ function renderVideos() {
 }
 
 function addVideoItem() {
-  var title = prompt('Tên video:');
-  if (!title) return;
-  var src = prompt('Đường dẫn video, ví dụ: frames/galley/intro.mp4');
-  if (!src) return;
-  var thumb = prompt('Đường dẫn ảnh thumbnail, ví dụ: frames/galley/PCTT 04_DAY.jpg', 'frames/galley/PCTT 04_DAY.jpg');
+  apiListFiles('frames/galley').then(function(items) {
+    var used = {};
+    (LIBRARY_DATA.videos || []).forEach(function(video) {
+      used[normalizeAssetPathInput(video.src)] = true;
+    });
+    libraryVideoPickerItems = (items || []).filter(function(item) {
+      return item.type === 'video' && !used[normalizeAssetPathInput(item.path)];
+    });
+    if (!libraryVideoPickerItems.length) {
+      closeVideoPicker();
+      showToast('Không còn video nào chưa thêm trong frames/galley. Hãy bấm "Upload & thêm video" nếu bạn muốn tải file mới.', 'error');
+      return;
+    }
+    renderVideoPicker();
+  }).catch(function(e) { showToast(e.message, 'error'); });
+}
+
+function addUploadedVideo(idx) {
+  var item = libraryVideoPickerItems[idx];
+  if (!item) return;
   LIBRARY_DATA.videos = LIBRARY_DATA.videos || [];
-  LIBRARY_DATA.videos.push({ title: title.trim(), src: src.trim().replace(/^\.?\//, ''), thumb: (thumb || '').trim().replace(/^\.?\//, ''), description: '' });
+  LIBRARY_DATA.videos.push(buildLibraryVideo(item.path, item.name));
+  closeVideoPicker();
   renderAlbums();
+  persistLibraryData('Đã thêm video vào thư viện').catch(function(e) { showToast(e.message, 'error'); });
+}
+
+function updateVideoTitle(idx, value) {
+  var videos = LIBRARY_DATA.videos || [];
+  if (!videos[idx]) return;
+  videos[idx].title = String(value || '').trim() || humanizeVideoTitle(videos[idx].src);
+  renderVideos();
+  persistLibraryData('Đã cập nhật tiêu đề video').catch(function(e) { showToast(e.message, 'error'); });
+}
+
+function updateVideoThumb(idx, value) {
+  var videos = LIBRARY_DATA.videos || [];
+  if (!videos[idx]) return;
+  videos[idx].thumb = normalizeAssetPathInput(value || '') || getDefaultVideoThumb();
+  renderVideos();
+  persistLibraryData('Đã cập nhật thumbnail video').catch(function(e) { showToast(e.message, 'error'); });
 }
 
 function deleteVideoItem(idx) {
   if (!confirm('Xóa video này?')) return;
   LIBRARY_DATA.videos.splice(idx, 1);
   renderAlbums();
+  persistLibraryData('Đã xóa video khỏi thư viện').catch(function(e) { showToast(e.message, 'error'); });
 }
 
 function saveLibraryData() {
-  LIBRARY_DATA.albums = ALBUMS;
-  apiSave('library', LIBRARY_DATA).then(function() {
-    showToast('Đã lưu thư viện ảnh/video', 'success');
-  }).catch(function(e) { showToast(e.message, 'error'); });
+  persistLibraryData('Đã lưu thư viện ảnh/video').catch(function(e) { showToast(e.message, 'error'); });
 }
 
 // ── VR Config ──
