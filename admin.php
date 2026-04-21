@@ -781,6 +781,10 @@ function getVideoThumbOptions(selectedThumb) {
   if (!options.length) {
     return '<option value="">Chưa có ảnh thư viện</option>';
   }
+  return options.map(function(src) {
+    return '<option value="' + escapeHtml(src) + '"' + (src === selected ? ' selected' : '') + '>' + escapeHtml(filenameFromPath(src)) + '</option>';
+  }).join('');
+}
 
 function logoutAdmin() {
   fetch(apiUrl({ action: 'logout' }), {
@@ -791,10 +795,6 @@ function logoutAdmin() {
   }).finally(function() {
     window.location.href = ADMIN_LOGIN_URL;
   });
-}
-  return options.map(function(src) {
-    return '<option value="' + escapeHtml(src) + '"' + (src === selected ? ' selected' : '') + '>' + escapeHtml(filenameFromPath(src)) + '</option>';
-  }).join('');
 }
 
 function buildLibraryVideo(src, name, title) {
