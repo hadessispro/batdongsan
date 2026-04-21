@@ -86,9 +86,6 @@
     };
     img.src = PANO_SRC;
   }
-  // Bắt đầu preload ngay
-  setTimeout(preloadPanoTexture, 300);
-
   // ═══ HOTSPOT DATA ═══
   var RAW_HOTSPOTS = [
     { px: 1837, py: 535, name: "KCN Đình Trám" },
@@ -135,6 +132,37 @@
   { px: 1004, py: 590, text: "ĐƯỜNG THÂN NHÂN TRUNG", size: 18, color: "#ffffff", rotate: -28, shadow: 7 },
    { px: 434, py: 542, text: "ĐƯỜNG QL 298B", size: 18, color: "#ffffff", rotate: 0, shadow: 5 },
 ];
+
+  function applyThamQuanConfig(data) {
+    if (!data || typeof data !== "object") return;
+    if (typeof data.panoSrc === "string" && data.panoSrc.trim()) {
+      PANO_SRC = data.panoSrc.trim();
+      panoTexture = null;
+      panoReady = false;
+      textureApplied = false;
+    }
+    if (Array.isArray(data.hotspots)) RAW_HOTSPOTS = data.hotspots;
+    if (Array.isArray(data.texts)) RAW_3D_TEXTS = data.texts;
+  }
+
+  function loadThamQuanConfig() {
+    return fetch("data/thamquan_config.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("Không tải được tham quan config");
+        return res.json();
+      })
+      .then(function (data) {
+        applyThamQuanConfig(data);
+      })
+      .catch(function () {
+        // Giữ fallback hardcode để website vẫn chạy khi thiếu backend/config.
+      })
+      .then(function () {
+        preloadPanoTexture();
+      });
+  }
+
+  var thamQuanConfigReady = loadThamQuanConfig();
 
   // ── Convert pixel → 3D ──
   function hotspot3DPos(px, py) {
@@ -686,19 +714,23 @@ textureApplied = false;
   });
 
   initThree();
-  createHotspots();
-  create3DTexts();
+  thamQuanConfigReady.then(function () {
+    createHotspots();
+    create3DTexts();
 
-  if (textureApplied) {
-    hideLoading();
-  } else if (panoReady) {
-    applyTexture();
-  }
+    if (textureApplied) {
+      hideLoading();
+    } else if (panoReady) {
+      applyTexture();
+    } else {
+      preloadPanoTexture();
+    }
 
-  requestAnimationFrame(function () {
-    resizeRenderer();
-    startRender();
-    updateCompass();
+    requestAnimationFrame(function () {
+      resizeRenderer();
+      startRender();
+      updateCompass();
+    });
   });
 }
 

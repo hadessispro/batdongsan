@@ -1480,7 +1480,7 @@
             <!-- ═══ Tab 2: Videos — Ecovillage-style Cards ═══ -->
             <div class="hdev-library-tab-content" data-tab-content="videos">
               <div class="vid-grid">
-                <div class="vid-card" data-video="./frames/galley/videomau.mp4">
+                <div class="vid-card" data-video="">
                   <div class="vid-card-thumb">
                     <img
                       src="./frames/galley/PCTT 04_DAY.jpg"
@@ -1777,14 +1777,26 @@
         <div class="vt-nav-hint">Kéo để di chuyển · Cuộn để zoom</div>
       </div>
       <div class="vt-lkv" id="vt-lkv" style="display: none">
+        <div class="vt-lkv-mode">
+          <button class="vt-lkv-mode-btn active" data-lkv-mode="image">ẢNH</button>
+          <button class="vt-lkv-mode-btn" data-lkv-mode="video">VIDEO</button>
+        </div>
         <div class="vt-lkv-img-wrapper" id="vt-lkv-wrapper">
           <img
-            class="vt-lkv-video"
+            class="vt-lkv-media vt-lkv-image"
             id="vt-lkv-img"
             src="./frames/galley/anhmau.jpg"
             alt="Liên kết vùng"
           />
         </div>
+        <video
+          class="vt-lkv-media vt-lkv-video"
+          id="vt-lkv-video"
+          controls
+          playsinline
+          preload="metadata"
+          style="display:none"
+        ></video>
         <div class="vt-lkv-hint">Kéo để di chuyển · Chụm để zoom</div>
       </div>
       <div class="vt-pill-bar">
@@ -2150,7 +2162,6 @@
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="thamquan-vr360.js?v=2"></script>
-    <script src="tienich-editor.js?v=1"></script>
     <script src="main.js?v=37"></script>
     <script src="matbang.js?v=1"></script>
     <script src="vitri.js?v=2"></script>
@@ -2163,16 +2174,19 @@
         var closeBtn = document.getElementById("vid-lb-close");
         var backdrop = lb ? lb.querySelector(".vid-lightbox-backdrop") : null;
         if (!lb || !player) return;
-        document.querySelectorAll(".vid-card").forEach(function (card) {
-          card.addEventListener("click", function () {
-            var src = this.getAttribute("data-video");
-            if (!src) return;
-            player.querySelector("source").src = src;
-            player.load();
-            lb.classList.add("open");
-            document.body.style.overflow = "hidden";
-            player.play().catch(function () {});
-          });
+        document.addEventListener("click", function (e) {
+          var card = e.target.closest(".vid-card");
+          if (!card) return;
+          var src = card.getAttribute("data-video");
+          if (!src) {
+            alert("Video chưa có file. Hãy thêm src trong Admin / data/library.json.");
+            return;
+          }
+          player.querySelector("source").src = src;
+          player.load();
+          lb.classList.add("open");
+          document.body.style.overflow = "hidden";
+          player.play().catch(function () {});
         });
         function closeLightbox() {
           player.pause();

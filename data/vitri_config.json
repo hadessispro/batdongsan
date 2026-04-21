@@ -1,0 +1,13 @@
+{
+  "projectCenter": [106.1105, 21.2675],
+  "projectName": "BÍCH ĐỘNG LAKESIDE",
+  "masterplanImage": "./frames/masterplan.png",
+  "masterplanCoords": [
+    [106.107924, 21.267104],
+    [106.11166, 21.271522],
+    [106.114737, 21.268732],
+    [106.11116, 21.2647]
+  ],
+  "lkvImage": "./frames/galley/anhmau.jpg",
+  "lkvVideo": ""
+}

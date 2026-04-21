@@ -2416,6 +2416,8 @@ loadAll();
     pageFlip = null,
     pagesContent = [];
   var currentPdfUrl = null;
+  var currentPdfPage = 1;
+  var currentPdfRender = null;
 
   function isMobile() {
     return window.innerWidth <= 768;
@@ -2661,23 +2663,15 @@ loadAll();
         if (totalPageEl) totalPageEl.textContent = totalPages;
         if (curPageEl) curPageEl.textContent = "1";
 
-        // ★ DPR cho canvas render — cao hơn = sắc nét hơn
         var dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-        // ★ Scale PDF gốc: dùng scale 1.0 để lấy kích thước thật
         var baseScale = 1.0;
 
         doc.getPage(1).then(function (page1) {
           if (mySession !== loadSession) return;
           var vp = page1.getViewport({ scale: baseScale });
-
-          // ★ Kích thước GỐC PDF (không shrink)
           var pdfW = vp.width;
           var pdfH = vp.height;
-
-          // ★ Canvas render ở kích thước lớn để sắc nét
-          // Nhưng KHÔNG dùng shrinkRatio nữa — render ở scale * dpr
-          var renderScale = baseScale; // có thể tăng lên 1.5 nếu cần nét hơn
+          var renderScale = baseScale;
 
           pagesContent = [];
           for (var i = 0; i < totalPages; i++) {
@@ -2689,11 +2683,8 @@ loadAll();
           }
 
           if (floatBadge) floatBadge.classList.add("hidden");
-
-          // ★ Truyền kích thước GỐC PDF (aspect ratio đúng)
           initFlipbookDesktop(pdfW, pdfH);
 
-          // Lazy render pages
           var renders = new Array(totalPages + 1).fill(false);
           var isFlipping = false;
 
@@ -2715,7 +2706,6 @@ loadAll();
                 tc.width = Math.round(v2.width * dpr);
                 tc.height = Math.round(v2.height * dpr);
                 var tx = tc.getContext("2d");
-                // ★ Scale context để render ở high-res
                 tx.setTransform(dpr, 0, 0, dpr, 0, 0);
                 return p
                   .render({ canvasContext: tx, viewport: v2 })
@@ -2723,7 +2713,6 @@ loadAll();
                     if (mySession !== loadSession) return;
                     var cv = pagesContent[num - 1];
                     if (!cv) return;
-                    // ★ Vẽ từ temp canvas sang page canvas (đã cùng kích thước)
                     var destCtx = cv.getContext("2d");
                     destCtx.drawImage(
                       tc,
@@ -2745,7 +2734,6 @@ loadAll();
               });
           }
 
-          // Render 4 trang đầu ngay
           renderLz(1).then(function () {
             renderLz(2);
             renderLz(3);
@@ -2763,7 +2751,6 @@ loadAll();
               renderLz(d + 2);
               renderLz(d - 1);
             });
-            // Background render
             var cl = 1;
             (function bg() {
               if (mySession !== loadSession) return;
@@ -2908,19 +2895,16 @@ loadAll();
 
     clearTimeout(flipResizeTimer);
     flipResizeTimer = setTimeout(function () {
-      // Lưu trang hiện tại
       var currentPage = 0;
       try {
         currentPage = pageFlip.getCurrentPageIndex();
       } catch (e) {}
 
-      // ★ Chỉ rebuild DISPLAY — canvas đã render rồi, không cần re-render
       initFlipbookDesktop(
         window._flipbookOrigSize.w,
         window._flipbookOrigSize.h,
       );
 
-      // Quay lại trang đang xem
       if (currentPage > 0 && pageFlip) {
         try {
           pageFlip.turnToPage(currentPage);
@@ -4185,7 +4169,7 @@ loadAll();
 
   // === HARD-CODED ALBUM DATA ===
   // Index matches data-album-index of each .hdev-library-grid-item
-  const ALBUMS = [
+  let ALBUMS = [
     {
       title: "Phối Cảnh Tổng Quan",
       images: [
@@ -4242,6 +4226,13 @@ loadAll();
       ],
     },
   ];
+  let LIBRARY_VIDEOS = [];
+
+  function normalizeAssetPath(src) {
+    if (!src) return "";
+    if (/^(https?:)?\/\//.test(src) || src.indexOf("./") === 0 || src.indexOf("/") === 0) return src;
+    return "./" + src.replace(/^\/+/, "");
+  }
 
   // === DOM ELEMENTS ===
   const lb = document.getElementById("album-lightbox");
@@ -4254,6 +4245,85 @@ loadAll();
   const lbThumbs = document.getElementById("alb-lb-thumbs");
 
   if (!lb) return;
+
+  function bindAlbumCards() {
+    document.querySelectorAll(".hdev-library-grid-item").forEach((item) => {
+      item.style.cursor = "pointer";
+      item.addEventListener("click", () => {
+        const idxStr = item.getAttribute("data-album-index");
+        if (idxStr !== null) {
+          const idx = parseInt(idxStr, 10);
+          show(idx, 0);
+        }
+      });
+    });
+  }
+
+  function renderLibraryCards() {
+    const grid = document.querySelector(".hdev-library-grid");
+    if (!grid) return;
+    grid.innerHTML = ALBUMS.map((album, idx) => {
+      const cover = normalizeAssetPath(album.cover || (album.images && album.images[0]) || BASE + "8.jpg");
+      return (
+        '<div class="hdev-library-grid-item' + ([1, 3, 4].includes(idx) ? " wide" : "") + '" data-album-index="' + idx + '">' +
+        '<div class="hdev-library-grid-image">' +
+        '<img src="' + cover + '" alt="' + (album.title || "Album") + '" />' +
+        '<div class="hdev-library-grid-overlay"></div>' +
+        '<div class="hdev-library-grid-title">' + (album.title || "Album") + '</div>' +
+        '</div></div>'
+      );
+    }).join("");
+    bindAlbumCards();
+  }
+
+  function renderVideoCards() {
+    const grid = document.querySelector(".vid-grid");
+    if (!grid) return;
+    if (!LIBRARY_VIDEOS.length) {
+      grid.innerHTML = '<div class="vid-empty">Chưa có video. Thêm video trong Admin / JSON Editor / data/library.json.</div>';
+      return;
+    }
+    grid.innerHTML = LIBRARY_VIDEOS.map((video) => {
+      const thumb = normalizeAssetPath(video.thumb || video.cover || "./frames/galley/PCTT 04_DAY.jpg");
+      const src = normalizeAssetPath(video.src || "");
+      return (
+        '<div class="vid-card" data-video="' + src + '">' +
+        '<div class="vid-card-thumb">' +
+        '<img src="' + thumb + '" alt="' + (video.title || "Video") + '" />' +
+        '<div class="vid-card-overlay"></div>' +
+        '<button class="vid-play-btn" aria-label="Phát video"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg></button>' +
+        '<span class="vid-duration">' + (video.duration || "") + '</span>' +
+        '</div><div class="vid-card-info">' +
+        '<h4 class="vid-card-title">' + (video.title || "Video") + '</h4>' +
+        '<p class="vid-card-desc">' + (video.description || "") + '</p>' +
+        '</div></div>'
+      );
+    }).join("");
+  }
+
+  function loadLibraryData() {
+    fetch("./data/library.json?t=" + Date.now(), { cache: "no-store" })
+      .then((r) => {
+        if (!r.ok) throw new Error("Không tải được library.json");
+        return r.json();
+      })
+      .then((data) => {
+        if (Array.isArray(data.albums)) {
+          ALBUMS = data.albums.map((album) => ({
+            title: album.title || "Album",
+            cover: normalizeAssetPath(album.cover || (album.images && album.images[0])),
+            images: (album.images || []).map(normalizeAssetPath),
+          }));
+        }
+        LIBRARY_VIDEOS = Array.isArray(data.videos) ? data.videos : [];
+        renderLibraryCards();
+        renderVideoCards();
+      })
+      .catch(() => {
+        renderLibraryCards();
+        renderVideoCards();
+      });
+  }
 
   let currentImages = [];
   let currentIdx = 0;
@@ -4334,16 +4404,7 @@ loadAll();
   });
 
   // === Attach click to gallery grid items ===
-  document.querySelectorAll(".hdev-library-grid-item").forEach((item) => {
-    item.style.cursor = "pointer";
-    item.addEventListener("click", () => {
-      const idxStr = item.getAttribute("data-album-index");
-      if (idxStr !== null) {
-        const idx = parseInt(idxStr, 10);
-        show(idx, 0);
-      }
-    });
-  });
+  bindAlbumCards();
 
   // === GALLERY TAB SWITCHING ===
   const galleryTabs = document.querySelectorAll(".hdev-library-tab");
@@ -4371,6 +4432,7 @@ loadAll();
   });
 
   // === INITIALIZE MASTER PLAN IMMEDIATELY ===
+  loadLibraryData();
   if (window.initOverviewMasterPlan) window.initOverviewMasterPlan();
 })();
 // ═══════════════════════════════════════════════════════════
@@ -4407,7 +4469,7 @@ loadAll();
     panel = document.getElementById("vt-lkv");
     if (!panel) return;
 
-    img = panel.querySelector(".vt-lkv-video");
+    img = panel.querySelector(".vt-lkv-image") || panel.querySelector(".vt-lkv-video");
     if (!img) return;
 
     // Tạo wrapper bọc quanh img
@@ -4436,6 +4498,10 @@ loadAll();
     natH: 1,
     fitScale: 1,
   };
+
+  function isVideoMode() {
+    return panel && panel.dataset.mode === "video";
+  }
 
   // ── Apply transform ──
   function apply(animate) {
@@ -4483,6 +4549,7 @@ loadAll();
   var _lastPanelH = 0;
 
   function setup(forceReset) {
+    if (isVideoMode()) return;
     pz.natW = img.naturalWidth || 1920;
     pz.natH = img.naturalHeight || 1080;
 
@@ -4527,6 +4594,7 @@ loadAll();
     mty = 0;
 
   panel.addEventListener("mousedown", function (e) {
+    if (isVideoMode()) return;
     if (e.button !== 0) return;
     dragging = true;
     msx = e.clientX;
@@ -4555,6 +4623,7 @@ loadAll();
   panel.addEventListener(
     "wheel",
     function (e) {
+      if (isVideoMode()) return;
       e.preventDefault();
       var rect = panel.getBoundingClientRect();
       var cx = e.clientX - rect.left;
@@ -4566,6 +4635,7 @@ loadAll();
   );
 
   panel.addEventListener("dblclick", function (e) {
+    if (isVideoMode()) return;
     var rect = panel.getBoundingClientRect();
     var cx = e.clientX - rect.left;
     var cy = e.clientY - rect.top;
@@ -4634,6 +4704,7 @@ loadAll();
   panel.addEventListener(
     "touchstart",
     function (e) {
+      if (isVideoMode()) return;
       stopInertia();
       if (e.touches.length === 1) {
         var now = Date.now();
@@ -4671,6 +4742,7 @@ loadAll();
   panel.addEventListener(
     "touchmove",
     function (e) {
+      if (isVideoMode()) return;
       e.preventDefault();
       if (t.pinching && e.touches.length === 2) {
         var nd = dist2(e.touches);
@@ -4722,12 +4794,14 @@ loadAll();
 
   // ── Init khi ảnh load xong ──
   function trySetup() {
+    if (isVideoMode()) return;
     if (img.complete && img.naturalWidth > 0) {
       setup(false);
     } else {
       img.onload = function () { setup(false); };
     }
   }
+  window._setupLkvImage = setup;
 
   // ── Gọi setup khi tab Liên Kết Vùng được hiện ──
   var _wasHidden = true;

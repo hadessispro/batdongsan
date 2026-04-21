@@ -1,0 +1,60 @@
+{
+  "albums": [
+    {
+      "title": "Phối Cảnh Tổng Quan",
+      "cover": "./frames/galley/PCTT 04_DAY.jpg",
+      "images": [
+        "./frames/galley/8.jpg",
+        "./frames/galley/PCTT 01.jpg",
+        "./frames/galley/PCTT 02.jpg",
+        "./frames/galley/PCTT 03.jpg",
+        "./frames/galley/PCTT 04_DAY.jpg",
+        "./frames/galley/PCTT 04_NIGHT.jpg"
+      ]
+    },
+    {
+      "title": "Shophouse 01",
+      "cover": "./frames/galley/6.jpg",
+      "images": [
+        "./frames/galley/18.jpg",
+        "./frames/galley/19.jpg",
+        "./frames/galley/20.jpg",
+        "./frames/galley/21.jpg"
+      ]
+    },
+    {
+      "title": "Shophouse 02",
+      "cover": "./frames/galley/20.jpg",
+      "images": [
+        "./frames/galley/6.jpg",
+        "./frames/galley/7.jpg",
+        "./frames/galley/8.jpg",
+        "./frames/galley/9.jpg",
+        "./frames/galley/10.jpg",
+        "./frames/galley/11.jpg"
+      ]
+    },
+    {
+      "title": "Liền Kề",
+      "cover": "./frames/galley/18.jpg",
+      "images": [
+        "./frames/galley/22.jpg",
+        "./frames/galley/14.jpg",
+        "./frames/galley/15.jpg",
+        "./frames/galley/16.jpg",
+        "./frames/galley/17.jpg"
+      ]
+    },
+    {
+      "title": "Biệt Thự",
+      "cover": "./frames/galley/13.jpg",
+      "images": [
+        "./frames/galley/12.jpg",
+        "./frames/galley/13.jpg",
+        "./frames/galley/23.jpg",
+        "./frames/galley/24.jpg"
+      ]
+    }
+  ],
+  "videos": []
+}

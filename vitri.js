@@ -41,9 +41,51 @@
   if (!overlay || !navBtn || !mapDiv) return;
 
   var map = null;
+  var vitriConfigLoaded = false;
   var IS_MOBILE_VT =
     /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
     window.innerWidth <= 768;
+
+  function applyVitriConfig(data) {
+    if (!data || typeof data !== "object") return;
+    if (Array.isArray(data.projectCenter) && data.projectCenter.length === 2) {
+      PROJECT_CENTER = data.projectCenter;
+    }
+    if (data.projectName) PROJECT_NAME = data.projectName;
+    if (data.masterplanImage) MASTERPLAN_IMAGE = data.masterplanImage;
+    if (Array.isArray(data.masterplanCoords) && data.masterplanCoords.length === 4) {
+      MASTERPLAN_COORDS = data.masterplanCoords;
+    }
+    var lkvImg = document.getElementById("vt-lkv-img");
+    if (lkvImg && data.lkvImage) lkvImg.src = data.lkvImage;
+    var lkvVideo = document.getElementById("vt-lkv-video");
+    if (lkvVideo && data.lkvVideo) lkvVideo.src = data.lkvVideo;
+    if (map) {
+      map.setCenter(PROJECT_CENTER);
+      addMasterplanOverlay();
+    }
+  }
+
+  function loadVitriConfig(cb) {
+    if (vitriConfigLoaded) {
+      cb && cb();
+      return;
+    }
+    fetch("./data/vitri_config.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("No vitri config");
+        return r.json();
+      })
+      .then(function (data) {
+        applyVitriConfig(data);
+        vitriConfigLoaded = true;
+        cb && cb();
+      })
+      .catch(function () {
+        vitriConfigLoaded = true;
+        cb && cb();
+      });
+  }
 
   // ── Khởi tạo Mapbox ──
   function initMap() {
@@ -242,18 +284,20 @@
     requestAnimationFrame(function () {
       overlay.classList.add("visible");
     });
-    initMap();
-    setTimeout(function () {
-      if (map) map.resize();
-    }, 400);
-    showSubView("vitri");
+    loadVitriConfig(function () {
+      initMap();
+      setTimeout(function () {
+        if (map) map.resize();
+      }, 400);
+      showSubView("vitri");
+    });
   }
 
   function hideVitri() {
     overlay.classList.remove("visible");
     var pillBar = document.querySelector(".vt-pill-bar");
     if (pillBar) pillBar.style.display = "none";
-    var media = document.querySelector(".vt-lkv-video");
+    var media = document.getElementById("vt-lkv-video");
     safePause(media);
     setTimeout(function () {
       overlay.style.display = "none";
@@ -267,7 +311,7 @@
   window._hideVitri = hideVitri;
 
   function showSubView(view) {
-    var media = document.querySelector(".vt-lkv-video");
+    var media = document.getElementById("vt-lkv-video");
     if (view === "vitri") {
       if (mapWrap) mapWrap.style.display = "block";
       if (lkvPanel) lkvPanel.style.display = "none";
@@ -287,9 +331,42 @@
     } else {
       if (mapWrap) mapWrap.style.display = "none";
       if (lkvPanel) lkvPanel.style.display = "block";
-      safePlay(media);
+      if (lkvPanel && lkvPanel.dataset.mode === "video") safePlay(media);
     }
   }
+
+  function setLkvMode(mode) {
+    var imageWrap = document.getElementById("vt-lkv-wrapper");
+    var video = document.getElementById("vt-lkv-video");
+    var hint = document.querySelector(".vt-lkv-hint");
+    if (!lkvPanel || !imageWrap || !video) return;
+    lkvPanel.dataset.mode = mode;
+    document.querySelectorAll(".vt-lkv-mode-btn").forEach(function (btn) {
+      btn.classList.toggle("active", btn.dataset.lkvMode === mode);
+    });
+    if (mode === "video") {
+      imageWrap.style.display = "none";
+      video.style.display = "block";
+      if (hint) hint.textContent = "Video full view · Không kéo thả";
+      safePlay(video);
+    } else {
+      safePause(video);
+      video.style.display = "none";
+      imageWrap.style.display = "block";
+      if (hint) hint.textContent = "Kéo để di chuyển · Chụm để zoom";
+      if (typeof window._setupLkvImage === "function") {
+        setTimeout(function () { window._setupLkvImage(true); }, 50);
+      }
+    }
+  }
+
+  document.querySelectorAll(".vt-lkv-mode-btn").forEach(function (btn) {
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      setLkvMode(this.dataset.lkvMode || "image");
+    });
+  });
+  if (lkvPanel && !lkvPanel.dataset.mode) setLkvMode("image");
 
   subBtns.forEach(function (btn) {
     btn.addEventListener("click", function () {

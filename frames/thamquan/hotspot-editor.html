@@ -1,0 +1,1980 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <title>3D VR Hotspot + Text Editor</title>
+    <style>
+      body {
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+        font-family: "Segoe UI", sans-serif;
+      }
+      #canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      /* ── TOOLBAR ── */
+      #toolbar {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 100;
+        background: rgba(0, 0, 0, 0.9);
+        padding: 16px;
+        border-radius: 10px;
+        color: #fff;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+        width: 360px;
+        max-height: calc(100vh - 30px);
+        overflow-y: auto;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      #toolbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      #toolbar::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 4px;
+      }
+
+      .tb-section {
+        margin-bottom: 14px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .tb-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+      }
+      details.tb-section {
+        display: block;
+      }
+      details.tb-section > summary {
+        cursor: pointer;
+        list-style: none;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #aaa;
+      }
+      details.tb-section > summary::-webkit-details-marker {
+        display: none;
+      }
+      details.tb-section > summary::after {
+        content: " ▾";
+        color: #50788d;
+      }
+      details.tb-section:not([open]) > summary::after {
+        content: " ▸";
+      }
+
+      .tb-title {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #888;
+        margin-bottom: 10px;
+      }
+
+      .instruction {
+        font-size: 12px;
+        margin-bottom: 10px;
+        line-height: 1.6;
+        color: #aaa;
+      }
+      .instruction b {
+        color: #fff;
+      }
+
+      button {
+        padding: 10px 16px;
+        background: #50788d;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        width: 100%;
+        margin-bottom: 6px;
+        transition: background 0.2s;
+      }
+      button:hover {
+        background: #62a1c0;
+      }
+
+      .btn-green {
+        background: #2d8a4e;
+      }
+      .btn-green:hover {
+        background: #38a85f;
+      }
+      .btn-orange {
+        background: #c07830;
+      }
+      .btn-orange:hover {
+        background: #d48a3e;
+      }
+      .btn-red {
+        background: #a33;
+      }
+      .btn-red:hover {
+        background: #c44;
+      }
+      .btn-purple {
+        background: #6a3db8;
+      }
+      .btn-purple:hover {
+        background: #7e50d4;
+      }
+
+      .btn-row {
+        display: flex;
+        gap: 6px;
+      }
+      .btn-row button {
+        flex: 1;
+      }
+
+      textarea {
+        width: 100%;
+        height: 200px;
+        background: #0a0a0a;
+        color: #0f0;
+        border: 1px solid #333;
+        padding: 8px;
+        font-family: "Cascadia Code", "Fira Code", monospace;
+        font-size: 11px;
+        resize: none;
+        outline: none;
+        margin-top: 8px;
+        box-sizing: border-box;
+        border-radius: 6px;
+        display: none;
+      }
+
+      /* ── Text Form ── */
+      .form-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 6px;
+        align-items: center;
+      }
+      .form-row label {
+        font-size: 11px;
+        color: #999;
+        min-width: 55px;
+        flex-shrink: 0;
+      }
+      .form-row input,
+      .form-row select {
+        flex: 1;
+        padding: 6px 8px;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 12px;
+        outline: none;
+      }
+      .form-row input:focus,
+      .form-row select:focus {
+        border-color: #50788d;
+      }
+      .form-row select {
+        cursor: pointer;
+      }
+      /* color row with picker */
+      .color-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 6px;
+        align-items: center;
+      }
+      .color-row label {
+        font-size: 11px;
+        color: #999;
+        min-width: 55px;
+        flex-shrink: 0;
+      }
+      .color-row select {
+        flex: 1;
+        padding: 6px 8px;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 12px;
+        outline: none;
+        cursor: pointer;
+      }
+      .color-row input[type="color"] {
+        width: 36px;
+        height: 30px;
+        padding: 2px;
+        border: 1px solid #333;
+        border-radius: 4px;
+        background: #1a1a1a;
+        cursor: pointer;
+        flex-shrink: 0;
+      }
+      /* rotate row with slider */
+      .rotate-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 6px;
+        align-items: center;
+      }
+      .rotate-row label {
+        font-size: 11px;
+        color: #999;
+        min-width: 55px;
+        flex-shrink: 0;
+      }
+      .rotate-row input[type="range"] {
+        flex: 1;
+        accent-color: #50788d;
+      }
+      .rotate-row input[type="number"] {
+        width: 56px;
+        padding: 6px 6px;
+        background: #1a1a1a;
+        border: 1px solid #333;
+        border-radius: 4px;
+        color: #fff;
+        font-size: 12px;
+        outline: none;
+        text-align: center;
+        flex-shrink: 0;
+      }
+
+      /* ── Mode indicator ── */
+      .mode-indicator {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        z-index: 100;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        pointer-events: none;
+        transition: all 0.3s;
+      }
+      .mode-hotspot {
+        background: rgba(80, 120, 141, 0.9);
+        color: #f7ca88;
+        border: 1px solid rgba(247, 202, 136, 0.3);
+      }
+      .mode-text {
+        background: rgba(45, 138, 78, 0.9);
+        color: #a0ffc0;
+        border: 1px solid rgba(160, 255, 192, 0.3);
+      }
+
+      /* ── Hotspot container ── */
+      #hs-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 50;
+      }
+
+      /* ── Hotspot pin (existing) ── */
+      .tq-hs {
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transform: translate(-50%, calc(-100% + 5px));
+        pointer-events: auto;
+        cursor: grab;
+      }
+      .tq-hs:active {
+        cursor: grabbing;
+        z-index: 9999;
+      }
+      .tq-hs-label {
+        background: #50788d;
+        color: #f7ca88;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 6px;
+        white-space: normal;
+        max-width: 140px;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        user-select: none;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      .tq-hs-line {
+        width: 2px;
+        height: 80px;
+        background: #50788d;
+        flex-shrink: 0;
+      }
+      .tq-hs-dot {
+        width: 10px;
+        height: 10px;
+        background: #f7ca88;
+        border-radius: 50%;
+        border: 2px solid #50788d;
+        flex-shrink: 0;
+      }
+      .tq-hs:active .tq-hs-label {
+        background: #ff0000;
+        color: #fff;
+      }
+      .tq-hs:active .tq-hs-line {
+        background: #ff0000;
+      }
+      .tq-hs:active .tq-hs-dot {
+        background: #fff;
+        border-color: #ff0000;
+        transform: scale(1.5);
+      }
+
+      /* ── 3D Text label (new) ── */
+      .tq-text3d {
+        position: absolute;
+        pointer-events: auto;
+        cursor: grab;
+        user-select: none;
+        transform: translate(-50%, -50%);
+        transition: opacity 0.1s;
+      }
+      .tq-text3d:active {
+        cursor: grabbing;
+        z-index: 9999;
+      }
+      .tq-text3d-inner {
+        font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        white-space: nowrap;
+        user-select: none;
+      }
+      .tq-text3d:active .tq-text3d-inner {
+        color: #ff4444 !important;
+        text-shadow:
+          0 0 12px rgba(255, 0, 0, 0.5),
+          0 2px 4px rgba(0, 0, 0, 0.8);
+      }
+      /* selected state */
+      .tq-text3d.selected .tq-text3d-inner {
+        outline: 2px dashed rgba(80, 200, 255, 0.7);
+        outline-offset: 4px;
+        border-radius: 2px;
+      }
+
+      /* ── Action buttons on hover (delete + edit) ── */
+      .tq-text3d .del-btn,
+      .tq-hs .del-btn {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        width: 18px;
+        height: 18px;
+        background: #c33;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        font-size: 11px;
+        line-height: 18px;
+        text-align: center;
+        cursor: pointer;
+        display: none;
+        z-index: 10;
+        padding: 0;
+        pointer-events: auto;
+      }
+      .tq-text3d .edit-btn {
+        position: absolute;
+        top: -8px;
+        left: -8px;
+        width: 18px;
+        height: 18px;
+        background: #2d7dc4;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        font-size: 10px;
+        line-height: 18px;
+        text-align: center;
+        cursor: pointer;
+        display: none;
+        z-index: 10;
+        padding: 0;
+        pointer-events: auto;
+      }
+      .tq-text3d:hover .del-btn,
+      .tq-hs:hover .del-btn {
+        display: block;
+      }
+      .tq-text3d:hover .edit-btn {
+        display: block;
+      }
+
+      /* ── Stats bar ── */
+      .stats-bar {
+        position: fixed;
+        bottom: 15px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 100;
+        display: flex;
+        gap: 16px;
+        padding: 8px 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-size: 11px;
+        color: #888;
+      }
+      .stats-bar span {
+        color: #fff;
+        font-weight: 600;
+      }
+
+      /* ══════════════════════════════════════
+         MODAL EDIT CHỮ 3D
+      ══════════════════════════════════════ */
+      #edit-modal {
+        display: none;
+        position: fixed;
+        z-index: 9000;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.55);
+        justify-content: center;
+        align-items: center;
+      }
+      #edit-modal.open {
+        display: flex;
+      }
+      #edit-modal-box {
+        background: #141414;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 22px 24px;
+        width: 340px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8);
+        position: relative;
+      }
+      #edit-modal-box h3 {
+        margin: 0 0 16px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #a0e8ff;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      #edit-modal-box .form-row label {
+        min-width: 60px;
+      }
+      #edit-modal-close {
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        background: none;
+        border: none;
+        color: #888;
+        font-size: 18px;
+        cursor: pointer;
+        width: auto;
+        padding: 0;
+        line-height: 1;
+        margin: 0;
+      }
+      #edit-modal-close:hover {
+        color: #fff;
+        background: none;
+      }
+      #edit-preview-wrap {
+        margin: 12px 0;
+        background: #222;
+        border-radius: 8px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      #edit-preview-text {
+        font-family: "Be Vietnam Pro", "Segoe UI", sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-shadow:
+          0 0 8px rgba(0, 0, 0, 0.9),
+          0 2px 4px rgba(0, 0, 0, 0.8);
+        white-space: nowrap;
+        transition: all 0.15s;
+      }
+      #edit-modal-save {
+        background: #2d8a4e;
+        margin-top: 8px;
+      }
+      #edit-modal-save:hover {
+        background: #38a85f;
+      }
+
+      input[type="range"] {
+        accent-color: #50788d;
+      }
+      .rotate-val-label {
+        font-size: 12px;
+        color: #a0ffc0;
+        font-weight: 700;
+        min-width: 40px;
+        text-align: right;
+      }
+      #sync-status {
+        margin-top: 6px;
+        color: #9ca3af;
+        font-size: 11px;
+        line-height: 1.4;
+      }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;900&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- Mode indicator -->
+    <div class="mode-indicator mode-hotspot" id="mode-indicator">
+      📌 Chế độ Ghim
+    </div>
+
+    <!-- Stats bar -->
+    <div class="stats-bar">
+      Ghim: <span id="stat-hs">0</span> &nbsp;·&nbsp; Chữ 3D:
+      <span id="stat-txt">0</span> &nbsp;·&nbsp; FOV:
+      <span id="stat-fov">75</span>°
+    </div>
+
+    <!-- ══ MODAL EDIT CHỮ 3D ══ -->
+    <div id="edit-modal">
+      <div id="edit-modal-box">
+        <button id="edit-modal-close" title="Đóng">✕</button>
+        <h3>✏️ Chỉnh sửa Chữ 3D</h3>
+
+        <div id="edit-preview-wrap">
+          <div id="edit-preview-text">PREVIEW</div>
+        </div>
+
+        <div class="form-row">
+          <label>Nội dung</label>
+          <input type="text" id="edit-inp-text" placeholder="Nhập chữ..." />
+        </div>
+        <div class="form-row">
+          <label>Cỡ chữ</label>
+          <select id="edit-inp-size">
+            <option value="14">Nhỏ (14px)</option>
+            <option value="18" selected>Vừa (18px)</option>
+            <option value="24">Lớn (24px)</option>
+            <option value="32">Rất lớn (32px)</option>
+            <option value="40">Cực lớn (40px)</option>
+            <option value="48">Siêu lớn (48px)</option>
+            <option value="64">Khổng lồ (64px)</option>
+            <option value="80">Phóng đại (80px)</option>
+            <option value="120">Max (120px)</option>
+          </select>
+        </div>
+
+        <div class="color-row">
+          <label>Màu chữ</label>
+          <select id="edit-inp-color-preset">
+            <option value="#ffffff">Trắng</option>
+            <option value="#f6e493">Vàng gold</option>
+            <option value="#1eb8d0">Xanh cyan</option>
+            <option value="#ff6b6b">Đỏ nhạt</option>
+            <option value="#a0ffc0">Xanh lá nhạt</option>
+            <option value="#ffaa44">Cam</option>
+            <option value="#ff44cc">Hồng</option>
+            <option value="#custom">🎨 Tuỳ chỉnh...</option>
+          </select>
+          <input
+            type="color"
+            id="edit-inp-color-picker"
+            value="#f6e493"
+            title="Chọn màu tuỳ chỉnh"
+          />
+        </div>
+
+        <div class="rotate-row">
+          <label>Xoay (°)</label>
+          <input
+            type="range"
+            id="edit-inp-rotate-slider"
+            min="-180"
+            max="180"
+            step="1"
+            value="0"
+          />
+          <input
+            type="number"
+            id="edit-inp-rotate-num"
+            min="-180"
+            max="180"
+            step="1"
+            value="0"
+          />
+        </div>
+
+        <div class="rotate-row">
+          <label>Đổ bóng</label>
+          <input
+            type="range"
+            id="edit-inp-shadow-slider"
+            min="0"
+            max="10"
+            step="0.5"
+            value="5"
+          />
+          <input
+            type="number"
+            id="edit-inp-shadow-num"
+            min="0"
+            max="10"
+            step="0.5"
+            value="5"
+            style="width: 56px"
+          />
+        </div>
+
+        <button id="edit-modal-save">💾 Lưu thay đổi</button>
+      </div>
+    </div>
+
+    <div id="toolbar">
+      <div class="tb-section">
+        <div class="tb-title">Hướng dẫn</div>
+        <div class="instruction">
+          👉 Click nền kéo = <b>xoay Camera</b><br />
+          👉 Scroll = <b>Zoom</b><br />
+          👉 Nắm kéo <b>Ghim/Chữ</b> để đặt vị trí<br />
+          👉 Hover → <b style="color: #f66">✕</b> Xoá &nbsp;|&nbsp;
+          <b style="color: #6cf">✎</b> Sửa chữ<br />
+          👉 Double-click chữ = <b>Mở sửa nhanh</b>
+        </div>
+      </div>
+
+      <div class="tb-section">
+        <div class="tb-title">Đồng bộ website</div>
+        <button id="btn-load-api">↻ Load từ website</button>
+        <button id="btn-save-api" class="btn-green">💾 Lưu lên website</button>
+        <div id="sync-status">Tool này lưu vào <b>data/thamquan_config.json</b>.</div>
+      </div>
+
+      <div class="tb-section">
+        <div class="tb-title">Chế độ</div>
+        <div class="btn-row">
+          <button id="btn-mode-hs" class="btn-orange" style="opacity: 1">
+            📌 Ghim
+          </button>
+          <button id="btn-mode-txt" class="btn-green" style="opacity: 0.5">
+            🔤 Chữ 3D
+          </button>
+        </div>
+      </div>
+
+      <div class="tb-section" id="text-form" style="display: none">
+        <div class="tb-title">Thêm Chữ 3D mới</div>
+        <div class="form-row">
+          <label>Nội dung</label>
+          <input type="text" id="inp-text" placeholder="VD: ĐL. Nguyễn Trãi" />
+        </div>
+        <div class="form-row">
+          <label>Cỡ chữ</label>
+          <select id="inp-size">
+            <option value="14">Nhỏ (14px)</option>
+            <option value="18" selected>Vừa (18px)</option>
+            <option value="24">Lớn (24px)</option>
+            <option value="32">Rất lớn (32px)</option>
+            <option value="40">Cực lớn (40px)</option>
+            <option value="48">Siêu lớn (48px)</option>
+            <option value="64">Khổng lồ (64px)</option>
+            <option value="80">Phóng đại (80px)</option>
+            <option value="120">Max (120px)</option>
+          </select>
+        </div>
+
+        <div class="color-row">
+          <label>Màu chữ</label>
+          <select id="inp-color-preset">
+            <option value="#ffffff">Trắng</option>
+            <option value="#f6e493" selected>Vàng gold</option>
+            <option value="#1eb8d0">Xanh cyan</option>
+            <option value="#ff6b6b">Đỏ nhạt</option>
+            <option value="#a0ffc0">Xanh lá nhạt</option>
+            <option value="#ffaa44">Cam</option>
+            <option value="#ff44cc">Hồng</option>
+            <option value="#custom">🎨 Tuỳ chỉnh...</option>
+          </select>
+          <input
+            type="color"
+            id="inp-color-picker"
+            value="#f6e493"
+            title="Chọn màu tuỳ chỉnh"
+          />
+        </div>
+
+        <div class="rotate-row">
+          <label>Xoay (°)</label>
+          <input
+            type="range"
+            id="inp-rotate-slider"
+            min="-180"
+            max="180"
+            step="1"
+            value="0"
+          />
+          <input
+            type="number"
+            id="inp-rotate-num"
+            min="-180"
+            max="180"
+            step="1"
+            value="0"
+          />
+        </div>
+
+        <div class="rotate-row">
+          <label>Đổ bóng</label>
+          <input
+            type="range"
+            id="inp-shadow-slider"
+            min="0"
+            max="10"
+            step="0.5"
+            value="5"
+          />
+          <input
+            type="number"
+            id="inp-shadow-num"
+            min="0"
+            max="10"
+            step="0.5"
+            value="5"
+            style="width: 56px"
+          />
+        </div>
+
+        <button id="btn-add-text" class="btn-green">
+          ＋ Thêm chữ vào giữa màn hình
+        </button>
+      </div>
+
+      <div class="tb-section" id="hs-form">
+        <div class="tb-title">Thêm Ghim mới</div>
+        <div class="form-row">
+          <label>Tên</label>
+          <input
+            type="text"
+            id="inp-hs-name"
+            placeholder="VD: KCN Quang Châu"
+          />
+        </div>
+        <button id="btn-add-hs" class="btn-orange">
+          ＋ Thêm ghim vào giữa màn hình
+        </button>
+      </div>
+
+      <details class="tb-section">
+        <summary>Xuất dữ liệu / JSON nâng cao</summary>
+        <button id="btn-export-hs">📋 Export RAW_HOTSPOTS</button>
+        <button id="btn-export-txt" class="btn-green">
+          📋 Export RAW_3D_TEXTS
+        </button>
+        <button id="btn-export-all">📋 Export Tất Cả</button>
+        <textarea id="output" readonly></textarea>
+      </details>
+    </div>
+
+    <canvas id="canvas"></canvas>
+    <div id="hs-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+      (function () {
+        "use strict";
+
+        // ════════════════════════════════════════════════════════
+        //  DATA
+        // ════════════════════════════════════════════════════════
+
+        var PANO_SRC = "frames/tienich/PANO_1_1.jpg";
+        var RAW_HOTSPOTS = [];
+
+        var RAW_3D_TEXTS = [
+          {
+            px: 1223,
+            py: 616,
+            text: "ĐƯỜNG QUỐC CƠ",
+            size: 20,
+            color: "#ffffff",
+            rotate: 47,
+            shadow: 3,
+          },
+          {
+            px: 1410,
+            py: 677,
+            text: "ĐƯỜNG THÂN NHÂN TRUNG (QUỐC LỘ 37)",
+            size: 20,
+            color: "#ffffff",
+            rotate: 3,
+            shadow: 3,
+          },
+          {
+            px: 1410,
+            py: 677,
+            text: "ĐƯỜNG THÂN NHÂN TRUNG (QUỐC LỘ 37)",
+            size: 20,
+            color: "#ffffff",
+            rotate: 3,
+            shadow: 3,
+          },
+          {
+            px: 1410,
+            py: 677,
+            text: "ĐƯỜNG THÂN NHÂN TRUNG (QUỐC LỘ 37)",
+            size: 20,
+            color: "#ffffff",
+            rotate: 3,
+            shadow: 3,
+          },
+          {
+            px: 1167,
+            py: 504,
+            text: "VÀNH ĐAI  4",
+            size: 20,
+            color: "#ffffff",
+            rotate: 0,
+            shadow: 4,
+          },
+          {
+            px: 1902,
+            py: 566,
+            text: "ĐƯỜNG THÂN CẢNH PHÚC (DT295B)",
+            size: 24,
+            color: "#ffffff",
+            rotate: 3,
+            shadow: 8,
+          },
+          {
+            px: 1635,
+            py: 555,
+            text: "ĐƯỜNG THÂN CẢNH PHÚC (DT295B)",
+            size: 24,
+            color: "#ffffff",
+            rotate: -9,
+            shadow: 7,
+          },
+        ];
+
+        var API_BASE = "../../api/index.php";
+        function apiUrl(params) {
+          return API_BASE + "?" + new URLSearchParams(params).toString();
+        }
+        function assetUrl(path) {
+          path = String(path || "").replace(/^\.?\//, "");
+          return "../../" + path;
+        }
+        function setSyncStatus(text, ok) {
+          var el = document.getElementById("sync-status");
+          if (!el) return;
+          el.textContent = text;
+          el.style.color = ok ? "#a0ffc0" : "#9ca3af";
+        }
+        function apiLogin() {
+          var username = prompt("Admin user:", "admin");
+          if (!username) return Promise.reject(new Error("Đã hủy đăng nhập"));
+          var password = prompt("Admin password:");
+          if (!password) return Promise.reject(new Error("Đã hủy đăng nhập"));
+          return fetch(apiUrl({ action: "login" }), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ username: username, password: password }),
+          }).then(function (r) {
+            return r.json().then(function (data) {
+              if (!r.ok || !data.ok) throw new Error(data.error || "Đăng nhập thất bại");
+              return data;
+            });
+          });
+        }
+        function apiLoadConfig() {
+          return fetch(apiUrl({ resource: "thamquan-config" }), {
+            cache: "no-store",
+            credentials: "same-origin",
+          }).then(function (r) {
+            return r.json().then(function (data) {
+              if (!r.ok || !data.ok) throw new Error(data.error || "Không tải được cấu hình");
+              return data.data || {};
+            });
+          });
+        }
+        function apiSaveConfig(payload, retry) {
+          return fetch(apiUrl({ resource: "thamquan-config" }), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ data: payload }),
+          }).then(function (r) {
+            return r.json().then(function (data) {
+              if (r.status === 401 && retry !== false) {
+                return apiLogin().then(function () {
+                  return apiSaveConfig(payload, false);
+                });
+              }
+              if (!r.ok || !data.ok) throw new Error(data.error || "Không lưu được cấu hình");
+              return data;
+            });
+          });
+        }
+
+        // ════════════════════════════════════════════════════════
+        //  THREE.JS SETUP
+        //  ★ FIX: Dùng BackSide + scale.x=-1 giống thamquan-vr360.js
+        //  Thay vì geo.scale(-1,1,1) + flip UV (gây ngược chiều)
+        // ════════════════════════════════════════════════════════
+
+        var SPHERE_R = 500;
+        var canvas = document.getElementById("canvas");
+        var hsContainer = document.getElementById("hs-container");
+        var w = window.innerWidth,
+          h = window.innerHeight;
+
+        var renderer = new THREE.WebGLRenderer({
+          canvas: canvas,
+          antialias: true,
+        });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setSize(w, h);
+
+        var scene = new THREE.Scene();
+        var camera = new THREE.PerspectiveCamera(75, w / h, 1, 1100);
+
+        // ★ FIX: Sphere dùng BackSide + scale.x=-1 (khớp main.js & thamquan-vr360.js)
+        var geo = new THREE.SphereGeometry(SPHERE_R, 128, 64);
+        var mat = new THREE.MeshBasicMaterial({ side: THREE.BackSide });
+        var sphereMesh = new THREE.Mesh(geo, mat);
+        sphereMesh.scale.x = -1; // ★ Đảo ngược X — khớp hệ thống chính
+        scene.add(sphereMesh);
+
+        function loadPanoTexture(src) {
+          PANO_SRC = String(src || PANO_SRC).replace(/^\.?\//, "");
+          new THREE.TextureLoader().load(
+            assetUrl(PANO_SRC),
+            function (tex) {
+              if (mat.map) mat.map.dispose();
+              tex.minFilter = THREE.LinearFilter;
+              tex.magFilter = THREE.LinearFilter;
+              mat.map = tex;
+              mat.needsUpdate = true;
+              var img = tex.image || {};
+              var ratio = img.width && img.height ? img.width / img.height : 2;
+              if (Math.abs(ratio - 2) > 0.04) {
+                setSyncStatus(
+                  "Ảnh không phải pano 360 chuẩn 2:1 nên sẽ bị méo: " +
+                    PANO_SRC +
+                    " (" +
+                    img.width +
+                    "×" +
+                    img.height +
+                    ")",
+                );
+              } else {
+                setSyncStatus("Đang dùng pano 360: " + PANO_SRC, true);
+              }
+            },
+            undefined,
+            function () {
+              setSyncStatus("Không tải được pano: " + PANO_SRC);
+            },
+          );
+        }
+        loadPanoTexture(PANO_SRC);
+
+        // ════════════════════════════════════════════════════════
+        //  HELPER — apply text shadow
+        // ════════════════════════════════════════════════════════
+
+        function applyTextShadow(el, sh) {
+          if (sh <= 0) {
+            el.style.textShadow = "none";
+            el.style.filter = "none";
+            return;
+          }
+          var a1 = Math.min(1, sh / 5);
+          var a2 = Math.min(0.9, sh * 0.12);
+          var blur1 = Math.round(sh * 1.6);
+          el.style.textShadow =
+            "0 0 " +
+            blur1 +
+            "px rgba(0,0,0," +
+            a1.toFixed(2) +
+            ")," +
+            "0 2px " +
+            Math.round(sh * 0.4 + 2) +
+            "px rgba(0,0,0," +
+            Math.min(a1, 0.9).toFixed(2) +
+            ")," +
+            "0 0 " +
+            Math.round(blur1 * 2.5) +
+            "px rgba(0,0,0," +
+            a2.toFixed(2) +
+            ")";
+          var ds1 = (sh * 0.1).toFixed(1);
+          var ds2 = (sh * 0.2).toFixed(1);
+          el.style.filter =
+            "drop-shadow(" +
+            ds1 +
+            "px " +
+            ds1 +
+            "px 0 rgba(0,0,0," +
+            Math.min(a1, 0.7).toFixed(2) +
+            "))" +
+            " drop-shadow(" +
+            ds2 +
+            "px " +
+            ds2 +
+            "px 0 rgba(0,0,0," +
+            (a2 * 0.6).toFixed(2) +
+            "))";
+        }
+
+        // ════════════════════════════════════════════════════════
+        //  COORDINATE CONVERSION
+        //  ★ FIX: Khớp với thamquan-vr360.js — KHÔNG mirror px
+        // ════════════════════════════════════════════════════════
+
+        function hotspot3DPos(px, py) {
+          // ★ FIX: Công thức khớp thamquan-vr360.js (không mirror, đảo Z)
+          var theta = (px / 2000) * 2 * Math.PI;
+          var phi = (py / 1000) * Math.PI;
+          var r = SPHERE_R * 0.92;
+          return new THREE.Vector3(
+            r * Math.sin(phi) * Math.cos(theta),
+            r * Math.cos(phi),
+            -r * Math.sin(phi) * Math.sin(theta),
+          );
+        }
+
+        var raycaster = new THREE.Raycaster();
+
+        function screenToImageCoords(clientX, clientY) {
+          var mx = (clientX / w) * 2 - 1;
+          var my = -(clientY / h) * 2 + 1;
+          raycaster.setFromCamera(new THREE.Vector2(mx, my), camera);
+          var hits = raycaster.intersectObject(sphereMesh);
+          if (hits.length === 0) return null;
+          var pt = hits[0].point;
+          var r = Math.sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+          var phi = Math.acos(pt.y / r);
+          // ★ FIX: Nghịch đảo của hotspot3DPos mới
+          // X = r*sin(phi)*cos(theta), Z = -r*sin(phi)*sin(theta)
+          // => theta = atan2(-Z, X)
+          var theta = Math.atan2(-pt.z, pt.x);
+          if (theta < 0) theta += 2 * Math.PI;
+          var imgX = Math.round((theta / (2 * Math.PI)) * 2000);
+          var imgY = Math.round((phi / Math.PI) * 1000);
+          return { px: imgX, py: imgY };
+        }
+
+        function getCenterImageCoords() {
+          return screenToImageCoords(w / 2, h / 2) || { px: 1000, py: 500 };
+        }
+
+        // ════════════════════════════════════════════════════════
+        //  CAMERA CONTROLS
+        //  ★ FIX: Chiều camera.lookAt khớp thamquan-vr360.js
+        // ════════════════════════════════════════════════════════
+
+        var camLon = 0,
+          camLat = 20;
+        var isDragCam = false,
+          dSX = 0,
+          dSY = 0,
+          dSLon = 0,
+          dSLat = 0;
+
+        canvas.addEventListener("mousedown", function (e) {
+          isDragCam = true;
+          dSX = e.clientX;
+          dSY = e.clientY;
+          dSLon = camLon;
+          dSLat = camLat;
+        });
+
+        window.addEventListener("mouseup", function () {
+          isDragCam = false;
+          isDraggingHS = null;
+          isDraggingText = null;
+        });
+
+        window.addEventListener("mousemove", function (e) {
+          if (isDraggingHS) {
+            var coords = screenToImageCoords(e.clientX, e.clientY);
+            if (coords) {
+              isDraggingHS.data.px = coords.px;
+              isDraggingHS.data.py = coords.py;
+              isDraggingHS.pos = hotspot3DPos(coords.px, coords.py);
+            }
+            return;
+          }
+
+          if (isDraggingText) {
+            var coords = screenToImageCoords(e.clientX, e.clientY);
+            if (coords) {
+              isDraggingText.data.px = coords.px;
+              isDraggingText.data.py = coords.py;
+              isDraggingText.pos = hotspot3DPos(coords.px, coords.py);
+              updateMeshOrientation(isDraggingText);
+            }
+            return;
+          }
+
+          if (isDragCam) {
+            // ★ FIX: Chiều kéo camera — trừ dx thay vì cộng (khớp main.js)
+            camLon = dSLon - (e.clientX - dSX) * 0.15;
+            camLat = dSLat + (e.clientY - dSY) * 0.15;
+            camLat = Math.max(-20, Math.min(85, camLat));
+          }
+        });
+
+        // Touch support
+        canvas.addEventListener(
+          "touchstart",
+          function (e) {
+            if (e.touches.length === 1) {
+              isDragCam = true;
+              dSX = e.touches[0].clientX;
+              dSY = e.touches[0].clientY;
+              dSLon = camLon;
+              dSLat = camLat;
+              e.preventDefault();
+            }
+          },
+          { passive: false },
+        );
+
+        window.addEventListener(
+          "touchmove",
+          function (e) {
+            if (isDragCam && e.touches.length === 1) {
+              // ★ FIX: Chiều kéo camera — khớp thamquan-vr360.js
+              camLon = dSLon - (e.touches[0].clientX - dSX) * 0.15;
+              camLat = dSLat + (e.touches[0].clientY - dSY) * 0.15;
+              camLat = Math.max(-20, Math.min(85, camLat));
+              e.preventDefault();
+            }
+          },
+          { passive: false },
+        );
+
+        window.addEventListener("touchend", function () {
+          isDragCam = false;
+        });
+
+        // Zoom
+        canvas.addEventListener(
+          "wheel",
+          function (e) {
+            camera.fov = Math.max(
+              30,
+              Math.min(100, camera.fov + e.deltaY * 0.05),
+            );
+            camera.updateProjectionMatrix();
+            document.getElementById("stat-fov").textContent = Math.round(
+              camera.fov,
+            );
+            e.preventDefault();
+          },
+          { passive: false },
+        );
+
+        // Resize
+        window.addEventListener("resize", function () {
+          w = window.innerWidth;
+          h = window.innerHeight;
+          renderer.setSize(w, h);
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+        });
+
+        // ════════════════════════════════════════════════════════
+        //  HOTSPOT ELEMENTS
+        // ════════════════════════════════════════════════════════
+
+        var hsEls = [];
+        var isDraggingHS = null;
+
+        function createHotspotEl(hsData) {
+          var el = document.createElement("div");
+          el.className = "tq-hs";
+          el.innerHTML =
+            '<span class="del-btn">✕</span>' +
+            '<div class="tq-hs-label">' +
+            hsData.name +
+            '</div><div class="tq-hs-line"></div><div class="tq-hs-dot"></div>';
+
+          var item = {
+            el: el,
+            pos: hotspot3DPos(hsData.px, hsData.py),
+            data: hsData,
+            type: "hs",
+          };
+
+          el.addEventListener("mousedown", function (e) {
+            if (e.target.classList.contains("del-btn")) return;
+            e.stopPropagation();
+            isDraggingHS = item;
+          });
+
+          el.querySelector(".del-btn").addEventListener("click", function (e) {
+            e.stopPropagation();
+            var idx = RAW_HOTSPOTS.indexOf(hsData);
+            if (idx >= 0) RAW_HOTSPOTS.splice(idx, 1);
+            var elIdx = hsEls.indexOf(item);
+            if (elIdx >= 0) hsEls.splice(elIdx, 1);
+            el.remove();
+            updateStats();
+          });
+
+          hsContainer.appendChild(el);
+          hsEls.push(item);
+          return item;
+        }
+
+        RAW_HOTSPOTS.forEach(function (hs) {
+          createHotspotEl(hs);
+        });
+
+        // ════════════════════════════════════════════════════════
+        //  3D TEXT ELEMENTS
+        // ════════════════════════════════════════════════════════
+
+        var textEls = [];
+        var isDraggingText = null;
+
+        function updateMeshOrientation(item) {
+          if (!item.mesh) return;
+          item.mesh.position.copy(item.pos).multiplyScalar(0.98);
+          item.mesh.lookAt(0, 0, 0);
+          var rot = item.data.rotate || 0;
+          item.mesh.rotateZ(THREE.MathUtils.degToRad(-rot));
+        }
+
+        function updateTextMeshTexture(item) {
+          if (!item.mesh) {
+            var geo = new THREE.PlaneGeometry(10, 10);
+            var mat = new THREE.MeshBasicMaterial({
+              transparent: true,
+              depthTest: false,
+              depthWrite: false,
+            });
+            item.mesh = new THREE.Mesh(geo, mat);
+            item.mesh.renderOrder = 999;
+            scene.add(item.mesh);
+          }
+          var data = item.data;
+          var cvs = document.createElement("canvas");
+          var ctx = cvs.getContext("2d");
+          var cH = 128;
+          ctx.font = "bold 60px 'Be Vietnam Pro', sans-serif";
+          var textWidth = ctx.measureText(data.text).width;
+          var cW = Math.max(128, textWidth + 80);
+          cvs.width = cW;
+          cvs.height = cH;
+          ctx.font = "bold 60px 'Be Vietnam Pro', sans-serif";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          var sh = data.shadow !== undefined ? data.shadow : 5;
+          if (sh > 0) {
+            ctx.shadowColor = "rgba(0,0,0,0.8)";
+            ctx.shadowBlur = sh * 2;
+            ctx.shadowOffsetX = 2;
+            ctx.shadowOffsetY = 2;
+          }
+          ctx.fillStyle = data.color || "#f6e493";
+          ctx.fillText(data.text, cW / 2, cH / 2);
+
+          var tex = new THREE.CanvasTexture(cvs);
+          tex.minFilter = THREE.LinearFilter;
+          tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+          if (item.mesh.material.map) item.mesh.material.map.dispose();
+          item.mesh.material.map = tex;
+          item.mesh.material.needsUpdate = true;
+
+          var targetHeight = data.size * 1.2;
+          var targetWidth = targetHeight * (cW / cH);
+          item.mesh.scale.set(targetWidth / 10, targetHeight / 10, 1);
+
+          updateMeshOrientation(item);
+        }
+
+        function createTextEl(txtData) {
+          var el = document.createElement("div");
+          el.className = "tq-text3d";
+
+          var inner = document.createElement("div");
+          inner.className = "tq-text3d-inner";
+          inner.textContent = txtData.text;
+          inner.style.fontSize = txtData.size + "px";
+          inner.style.color = txtData.color;
+          var sh = txtData.shadow !== undefined ? txtData.shadow : 5;
+          applyTextShadow(inner, sh);
+
+          var delBtn = document.createElement("span");
+          delBtn.className = "del-btn";
+          delBtn.textContent = "✕";
+          delBtn.title = "Xoá chữ";
+
+          var editBtn = document.createElement("span");
+          editBtn.className = "edit-btn";
+          editBtn.textContent = "✎";
+          editBtn.title = "Sửa chữ";
+
+          el.appendChild(delBtn);
+          el.appendChild(editBtn);
+          el.appendChild(inner);
+
+          var item = {
+            el: el,
+            pos: hotspot3DPos(txtData.px, txtData.py),
+            data: txtData,
+            type: "text",
+            inner: inner,
+          };
+
+          updateTextMeshTexture(item);
+          inner.style.opacity = "0";
+
+          el.addEventListener("mousedown", function (e) {
+            if (
+              e.target.classList.contains("del-btn") ||
+              e.target.classList.contains("edit-btn")
+            )
+              return;
+            e.stopPropagation();
+            isDraggingText = item;
+          });
+
+          delBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            var idx = RAW_3D_TEXTS.indexOf(txtData);
+            if (idx >= 0) RAW_3D_TEXTS.splice(idx, 1);
+            var elIdx = textEls.indexOf(item);
+            if (elIdx >= 0) textEls.splice(elIdx, 1);
+            if (item.mesh) {
+              scene.remove(item.mesh);
+              if (item.mesh.material.map) item.mesh.material.map.dispose();
+              item.mesh.material.dispose();
+              item.mesh.geometry.dispose();
+            }
+            el.remove();
+            updateStats();
+          });
+
+          editBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            openEditModal(item);
+          });
+
+          el.addEventListener("dblclick", function (e) {
+            e.stopPropagation();
+            openEditModal(item);
+          });
+
+          hsContainer.appendChild(el);
+          textEls.push(item);
+          return item;
+        }
+
+        RAW_3D_TEXTS.forEach(function (t) {
+          createTextEl(t);
+        });
+
+        function clearEditorItems() {
+          hsEls.forEach(function (item) {
+            if (item.el) item.el.remove();
+          });
+          hsEls = [];
+          textEls.forEach(function (item) {
+            if (item.el) item.el.remove();
+            if (item.mesh) {
+              scene.remove(item.mesh);
+              if (item.mesh.material.map) item.mesh.material.map.dispose();
+              item.mesh.material.dispose();
+              item.mesh.geometry.dispose();
+            }
+          });
+          textEls = [];
+        }
+
+        function rebuildEditorItems() {
+          clearEditorItems();
+          RAW_HOTSPOTS.forEach(function (hs) {
+            createHotspotEl(hs);
+          });
+          RAW_3D_TEXTS.forEach(function (t) {
+            createTextEl(t);
+          });
+          updateStats();
+        }
+
+        function applyBackendConfig(payload) {
+          payload = payload || {};
+          if (payload.panoSrc) {
+            PANO_SRC = String(payload.panoSrc).replace(/^\.?\//, "");
+            loadPanoTexture(PANO_SRC);
+          }
+          RAW_HOTSPOTS = Array.isArray(payload.hotspots)
+            ? payload.hotspots
+            : [];
+          RAW_3D_TEXTS = Array.isArray(payload.texts)
+            ? payload.texts
+            : [];
+          rebuildEditorItems();
+        }
+
+        function currentBackendConfig() {
+          return {
+            panoSrc: PANO_SRC,
+            hotspots: RAW_HOTSPOTS,
+            texts: RAW_3D_TEXTS,
+          };
+        }
+
+        document
+          .getElementById("btn-load-api")
+          .addEventListener("click", function () {
+            setSyncStatus("Đang tải cấu hình...");
+            apiLoadConfig()
+              .then(function (payload) {
+                applyBackendConfig(payload);
+                setSyncStatus("Đã load cấu hình từ website", true);
+              })
+              .catch(function (e) {
+                setSyncStatus("Lỗi load cấu hình");
+                alert(e.message);
+              });
+          });
+
+        document
+          .getElementById("btn-save-api")
+          .addEventListener("click", function () {
+            setSyncStatus("Đang lưu cấu hình...");
+            apiSaveConfig(currentBackendConfig())
+              .then(function () {
+                setSyncStatus("Đã lưu vào website", true);
+              })
+              .catch(function (e) {
+                setSyncStatus("Lỗi lưu cấu hình");
+                alert(e.message);
+              });
+          });
+
+        apiLoadConfig()
+          .then(function (payload) {
+            applyBackendConfig(payload);
+            setSyncStatus("Đã load cấu hình từ website", true);
+          })
+          .catch(function () {
+            setSyncStatus("Dùng dữ liệu mặc định trong tool");
+          });
+
+        // ════════════════════════════════════════════════════════
+        //  EDIT MODAL
+        // ════════════════════════════════════════════════════════
+
+        var editModal = document.getElementById("edit-modal");
+        var editInpText = document.getElementById("edit-inp-text");
+        var editInpSize = document.getElementById("edit-inp-size");
+        var editInpColorPreset = document.getElementById(
+          "edit-inp-color-preset",
+        );
+        var editInpColorPicker = document.getElementById(
+          "edit-inp-color-picker",
+        );
+        var editInpRotateSlider = document.getElementById(
+          "edit-inp-rotate-slider",
+        );
+        var editInpRotateNum = document.getElementById("edit-inp-rotate-num");
+        var editInpShadowSlider = document.getElementById(
+          "edit-inp-shadow-slider",
+        );
+        var editInpShadowNum = document.getElementById("edit-inp-shadow-num");
+        var editPreviewText = document.getElementById("edit-preview-text");
+        var editModalSave = document.getElementById("edit-modal-save");
+        var editModalClose = document.getElementById("edit-modal-close");
+
+        var currentEditItem = null;
+        var currentEditColor = "#f6e493";
+
+        function syncPreview() {
+          editPreviewText.textContent = editInpText.value || "PREVIEW";
+          editPreviewText.style.fontSize = editInpSize.value + "px";
+          editPreviewText.style.color = currentEditColor;
+          var rot = parseInt(editInpRotateNum.value) || 0;
+          editPreviewText.style.transform = "rotate(" + rot + "deg)";
+          var sh = parseInt(editInpShadowNum.value) || 0;
+          applyTextShadow(editPreviewText, sh);
+        }
+
+        function liveUpdate3DText() {
+          if (!currentEditItem) return;
+          currentEditItem.data.text = editInpText.value || " ";
+          currentEditItem.data.size = parseInt(editInpSize.value) || 18;
+          currentEditItem.data.color = currentEditColor;
+          currentEditItem.data.rotate = parseInt(editInpRotateNum.value) || 0;
+          currentEditItem.data.shadow = parseInt(editInpShadowNum.value) || 0;
+          updateTextMeshTexture(currentEditItem);
+        }
+
+        editInpText.addEventListener("input", function () {
+          syncPreview();
+          liveUpdate3DText();
+        });
+        editInpSize.addEventListener("change", function () {
+          syncPreview();
+          liveUpdate3DText();
+        });
+
+        editInpColorPreset.addEventListener("change", function () {
+          if (this.value !== "#custom") {
+            currentEditColor = this.value;
+            editInpColorPicker.value = currentEditColor;
+          } else {
+            editInpColorPicker.click();
+          }
+          syncPreview();
+          liveUpdate3DText();
+        });
+        editInpColorPicker.addEventListener("input", function () {
+          currentEditColor = this.value;
+          var opts = editInpColorPreset.options;
+          var found = false;
+          for (var i = 0; i < opts.length; i++) {
+            if (opts[i].value === currentEditColor) {
+              editInpColorPreset.value = currentEditColor;
+              found = true;
+              break;
+            }
+          }
+          if (!found) editInpColorPreset.value = "#custom";
+          syncPreview();
+          liveUpdate3DText();
+        });
+
+        editInpRotateSlider.addEventListener("input", function () {
+          editInpRotateNum.value = this.value;
+          syncPreview();
+          liveUpdate3DText();
+        });
+        editInpRotateNum.addEventListener("input", function () {
+          var v = Math.max(-180, Math.min(180, parseInt(this.value) || 0));
+          editInpRotateSlider.value = v;
+          syncPreview();
+          liveUpdate3DText();
+        });
+
+        editInpShadowSlider.addEventListener("input", function () {
+          editInpShadowNum.value = this.value;
+          syncPreview();
+          liveUpdate3DText();
+        });
+        editInpShadowNum.addEventListener("input", function () {
+          var v = Math.max(0, Math.min(10, parseInt(this.value) || 0));
+          editInpShadowSlider.value = v;
+          syncPreview();
+          liveUpdate3DText();
+        });
+
+        function openEditModal(item) {
+          currentEditItem = item;
+          var d = item.data;
+          editInpText.value = d.text;
+
+          var sizeOpts = editInpSize.options;
+          var sizeFound = false;
+          for (var i = 0; i < sizeOpts.length; i++) {
+            if (parseInt(sizeOpts[i].value) === d.size) {
+              editInpSize.selectedIndex = i;
+              sizeFound = true;
+              break;
+            }
+          }
+          if (!sizeFound) editInpSize.value = "18";
+
+          currentEditColor = d.color || "#f6e493";
+          editInpColorPicker.value = currentEditColor;
+          var presetFound = false;
+          var presetOpts = editInpColorPreset.options;
+          for (var j = 0; j < presetOpts.length; j++) {
+            if (presetOpts[j].value === currentEditColor) {
+              editInpColorPreset.value = currentEditColor;
+              presetFound = true;
+              break;
+            }
+          }
+          if (!presetFound) editInpColorPreset.value = "#custom";
+
+          var rot = d.rotate || 0;
+          editInpRotateSlider.value = rot;
+          editInpRotateNum.value = rot;
+
+          var sh = d.shadow !== undefined ? d.shadow : 5;
+          editInpShadowSlider.value = sh;
+          editInpShadowNum.value = sh;
+          applyTextShadow(editPreviewText, sh);
+
+          syncPreview();
+          editModal.classList.add("open");
+          editInpText.focus();
+        }
+
+        function closeEditModal() {
+          editModal.classList.remove("open");
+          currentEditItem = null;
+        }
+
+        editModalClose.addEventListener("click", closeEditModal);
+        editModal.addEventListener("click", function (e) {
+          if (e.target === editModal) closeEditModal();
+        });
+
+        editModalSave.addEventListener("click", function () {
+          if (!currentEditItem) return;
+          var newText = editInpText.value.trim();
+          if (!newText) {
+            alert("Nhập nội dung chữ!");
+            return;
+          }
+          updateTextMeshTexture(currentEditItem);
+          closeEditModal();
+        });
+
+        // ════════════════════════════════════════════════════════
+        //  ADD FORM — color sync
+        // ════════════════════════════════════════════════════════
+
+        var inpColorPreset = document.getElementById("inp-color-preset");
+        var inpColorPicker = document.getElementById("inp-color-picker");
+        var addCurrentColor = "#f6e493";
+
+        inpColorPreset.addEventListener("change", function () {
+          if (this.value !== "#custom") {
+            addCurrentColor = this.value;
+            inpColorPicker.value = addCurrentColor;
+          } else {
+            inpColorPicker.click();
+          }
+        });
+        inpColorPicker.addEventListener("input", function () {
+          addCurrentColor = this.value;
+          var opts = inpColorPreset.options;
+          var found = false;
+          for (var i = 0; i < opts.length; i++) {
+            if (opts[i].value === addCurrentColor) {
+              inpColorPreset.value = addCurrentColor;
+              found = true;
+              break;
+            }
+          }
+          if (!found) inpColorPreset.value = "#custom";
+        });
+
+        var inpRotateSlider = document.getElementById("inp-rotate-slider");
+        var inpRotateNum = document.getElementById("inp-rotate-num");
+        inpRotateSlider.addEventListener("input", function () {
+          inpRotateNum.value = this.value;
+        });
+        inpRotateNum.addEventListener("input", function () {
+          var v = Math.max(-180, Math.min(180, parseInt(this.value) || 0));
+          inpRotateSlider.value = v;
+        });
+
+        // ════════════════════════════════════════════════════════
+        //  RENDER LOOP
+        //  ★ FIX: camera.lookAt khớp thamquan-vr360.js
+        // ════════════════════════════════════════════════════════
+
+        var _v = new THREE.Vector3();
+
+        function projectToScreen(pos3d) {
+          _v.copy(pos3d).project(camera);
+          if (_v.z > 1) return null;
+          var sx = (0.5 + _v.x / 2) * w;
+          var sy = (0.5 - _v.y / 2) * h;
+          if (sx < -300 || sx > w + 300 || sy < -300 || sy > h + 300)
+            return null;
+          return { x: sx, y: sy, z: _v.z };
+        }
+
+        function animate() {
+          requestAnimationFrame(animate);
+
+          // ★ FIX: camera.lookAt khớp thamquan-vr360.js
+          var phiCam = THREE.MathUtils.degToRad(90 - camLat);
+          var thetaCam = THREE.MathUtils.degToRad(camLon);
+          camera.lookAt(
+            SPHERE_R * Math.sin(phiCam) * Math.cos(thetaCam),
+            SPHERE_R * Math.cos(phiCam),
+            SPHERE_R * Math.sin(phiCam) * Math.sin(thetaCam),
+          );
+
+          renderer.render(scene, camera);
+
+          for (var i = 0; i < hsEls.length; i++) {
+            var hs = hsEls[i];
+            var scr = projectToScreen(hs.pos);
+            if (!scr) {
+              hs.el.style.display = "none";
+              continue;
+            }
+            hs.el.style.display = "";
+            hs.el.style.left = Math.round(scr.x) + "px";
+            hs.el.style.top = Math.round(scr.y) + "px";
+          }
+
+          for (var j = 0; j < textEls.length; j++) {
+            var txt = textEls[j];
+            var scr = projectToScreen(txt.pos);
+            if (!scr) {
+              txt.el.style.display = "none";
+              continue;
+            }
+            txt.el.style.display = "";
+            txt.el.style.left = Math.round(scr.x) + "px";
+            txt.el.style.top = Math.round(scr.y) + "px";
+            var fovScale = 75 / camera.fov;
+            var depthScale = Math.max(0.4, Math.min(2.0, fovScale));
+            txt.inner.style.transform = "scale(" + depthScale.toFixed(2) + ")";
+          }
+        }
+        animate();
+
+        // ════════════════════════════════════════════════════════
+        //  MODE SWITCH
+        // ════════════════════════════════════════════════════════
+
+        var currentMode = "hs";
+        var modeIndicator = document.getElementById("mode-indicator");
+        var textForm = document.getElementById("text-form");
+        var hsForm = document.getElementById("hs-form");
+        var btnModeHS = document.getElementById("btn-mode-hs");
+        var btnModeTxt = document.getElementById("btn-mode-txt");
+
+        function setMode(mode) {
+          currentMode = mode;
+          if (mode === "hs") {
+            modeIndicator.className = "mode-indicator mode-hotspot";
+            modeIndicator.textContent = "📌 Chế độ Ghim";
+            textForm.style.display = "none";
+            hsForm.style.display = "block";
+            btnModeHS.style.opacity = "1";
+            btnModeTxt.style.opacity = "0.5";
+          } else {
+            modeIndicator.className = "mode-indicator mode-text";
+            modeIndicator.textContent = "🔤 Chế độ Chữ 3D";
+            textForm.style.display = "block";
+            hsForm.style.display = "none";
+            btnModeHS.style.opacity = "0.5";
+            btnModeTxt.style.opacity = "1";
+          }
+        }
+
+        btnModeHS.addEventListener("click", function () {
+          setMode("hs");
+        });
+        btnModeTxt.addEventListener("click", function () {
+          setMode("text");
+        });
+
+        // ════════════════════════════════════════════════════════
+        //  ADD NEW ITEMS
+        // ════════════════════════════════════════════════════════
+
+        document
+          .getElementById("btn-add-hs")
+          .addEventListener("click", function () {
+            var name = document.getElementById("inp-hs-name").value.trim();
+            if (!name) {
+              alert("Nhập tên ghim!");
+              return;
+            }
+            var center = getCenterImageCoords();
+            var newHS = { px: center.px, py: center.py, name: name };
+            RAW_HOTSPOTS.push(newHS);
+            createHotspotEl(newHS);
+            document.getElementById("inp-hs-name").value = "";
+            updateStats();
+          });
+
+        var inpShadowSlider = document.getElementById("inp-shadow-slider");
+        var inpShadowNum = document.getElementById("inp-shadow-num");
+        inpShadowSlider.addEventListener("input", function () {
+          inpShadowNum.value = this.value;
+        });
+        inpShadowNum.addEventListener("input", function () {
+          var v = Math.max(0, Math.min(10, parseFloat(this.value) || 0));
+          inpShadowSlider.value = v;
+        });
+
+        document
+          .getElementById("btn-add-text")
+          .addEventListener("click", function () {
+            var text = document.getElementById("inp-text").value.trim();
+            if (!text) {
+              alert("Nhập nội dung chữ!");
+              return;
+            }
+            var size =
+              parseInt(document.getElementById("inp-size").value) || 18;
+            var color = addCurrentColor || "#f6e493";
+            var rotate =
+              parseInt(document.getElementById("inp-rotate-num").value) || 0;
+            var shadow = parseFloat(inpShadowSlider.value);
+            if (isNaN(shadow)) shadow = 5;
+            var center = getCenterImageCoords();
+            var newTxt = {
+              px: center.px,
+              py: center.py,
+              text: text,
+              size: size,
+              color: color,
+              rotate: rotate,
+              shadow: shadow,
+            };
+            RAW_3D_TEXTS.push(newTxt);
+            createTextEl(newTxt);
+            document.getElementById("inp-text").value = "";
+            updateStats();
+          });
+
+        // ════════════════════════════════════════════════════════
+        //  EXPORT
+        // ════════════════════════════════════════════════════════
+
+        function exportHotspots() {
+          var out = "var RAW_HOTSPOTS = [\n";
+          RAW_HOTSPOTS.forEach(function (hs) {
+            out +=
+              "  { px: " +
+              hs.px +
+              ", py: " +
+              hs.py +
+              ', name: "' +
+              hs.name +
+              '" },\n';
+          });
+          out += "];";
+          return out;
+        }
+
+        function exportTexts() {
+          var out = "var RAW_3D_TEXTS = [\n";
+          RAW_3D_TEXTS.forEach(function (t) {
+            out +=
+              "  { px: " +
+              t.px +
+              ", py: " +
+              t.py +
+              ', text: "' +
+              t.text +
+              '"' +
+              ", size: " +
+              t.size +
+              ', color: "' +
+              t.color +
+              '"' +
+              ", rotate: " +
+              (t.rotate || 0) +
+              ", shadow: " +
+              (t.shadow !== undefined ? t.shadow : 5) +
+              " },\n";
+          });
+          out += "];";
+          return out;
+        }
+
+        function doExport(content, btnEl) {
+          var el = document.getElementById("output");
+          el.style.display = "block";
+          el.value = content;
+          el.select();
+          try {
+            navigator.clipboard.writeText(content);
+          } catch (e) {}
+          var orig = btnEl.textContent;
+          btnEl.textContent = "✅ Đã Copy!";
+          btnEl.style.background = "#28a745";
+          setTimeout(function () {
+            btnEl.textContent = orig;
+            btnEl.style.background = "";
+          }, 2500);
+        }
+
+        document
+          .getElementById("btn-export-hs")
+          .addEventListener("click", function () {
+            doExport(exportHotspots(), this);
+          });
+        document
+          .getElementById("btn-export-txt")
+          .addEventListener("click", function () {
+            doExport(exportTexts(), this);
+          });
+        document
+          .getElementById("btn-export-all")
+          .addEventListener("click", function () {
+            doExport(exportHotspots() + "\n\n" + exportTexts(), this);
+          });
+
+        // ════════════════════════════════════════════════════════
+        //  STATS
+        // ════════════════════════════════════════════════════════
+
+        function updateStats() {
+          document.getElementById("stat-hs").textContent = RAW_HOTSPOTS.length;
+          document.getElementById("stat-txt").textContent = RAW_3D_TEXTS.length;
+        }
+        updateStats();
+
+        // ════════════════════════════════════════════════════════
+        //  KEYBOARD SHORTCUTS
+        // ════════════════════════════════════════════════════════
+
+        document.addEventListener("keydown", function (e) {
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+            return;
+          if (e.key === "1") setMode("hs");
+          if (e.key === "2") setMode("text");
+          if (e.key === "Escape") closeEditModal();
+          if (e.ctrlKey && e.key === "e") {
+            e.preventDefault();
+            document.getElementById("btn-export-all").click();
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

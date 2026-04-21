@@ -40,8 +40,8 @@
   ExpiresByType application/javascript        "access plus 30 days"
   ExpiresByType text/javascript               "access plus 30 days"
 
-  # ── JSON & Data — 30 ngày ──
-  ExpiresByType application/json              "access plus 30 days"
+  # ── JSON & Data — không cache để dữ liệu admin cập nhật ngay ──
+  ExpiresByType application/json              "access plus 0 seconds"
 
   # ── PDF — 30 ngày ──
   ExpiresByType application/pdf               "access plus 30 days"
@@ -63,9 +63,9 @@
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
 
-  # ── JSON → 30 ngày ──
+  # ── JSON → không cache để đồng bộ tool/admin với website ──
   <FilesMatch "\.(json)$">
-    Header set Cache-Control "public, max-age=2592000"
+    Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 
   # ── PDF → 30 ngày ──

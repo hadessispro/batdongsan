@@ -714,6 +714,8 @@
               📋 Export VR_MAP (lon/lat/fov)
             </button>
             <button id="btnExpAll" class="btn-p">📋 Export TẤT CẢ</button>
+            <button id="btnLoadApi" class="btn-g">↻ Load từ website</button>
+            <button id="btnSaveApi" class="btn-o">💾 Lưu lên website</button>
             <button id="btnImport" class="btn-o">📥 Import JSON</button>
             <textarea id="exportArea" placeholder="JSON..."></textarea>
             <div class="help-box">
@@ -737,6 +739,7 @@
       (function () {
         "use strict";
         var PANO_PATH = "./";
+        var PANO_THUMB_PATH = "./thumb/";
 
         var ALL_PANOS = [
           { key: "PANO_1_2", file: "PANO_1_2.jpg", label: "Pano 1" },
@@ -1064,6 +1067,72 @@
           try {
             localStorage.setItem("vre4-ac", JSON.stringify(amenityConfig));
           } catch (e) {}
+        }
+
+        var API_BASE = "../../api/index.php";
+        function apiUrl(params) {
+          return API_BASE + "?" + new URLSearchParams(params).toString();
+        }
+        function apiLogin() {
+          var username = prompt("Admin user:", "admin");
+          if (!username) return Promise.reject(new Error("Đã hủy đăng nhập"));
+          var password = prompt("Admin password:");
+          if (!password) return Promise.reject(new Error("Đã hủy đăng nhập"));
+          return fetch(apiUrl({ action: "login" }), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ username: username, password: password }),
+          }).then(function (r) {
+            return r.json().then(function (data) {
+              if (!r.ok || !data.ok) throw new Error(data.error || "Đăng nhập thất bại");
+              return data;
+            });
+          });
+        }
+        function apiLoadHotspots() {
+          return fetch(apiUrl({ resource: "vr-hotspots" }), {
+            cache: "no-store",
+            credentials: "same-origin",
+          }).then(function (r) {
+            return r.json().then(function (data) {
+              if (!r.ok || !data.ok) throw new Error(data.error || "Không tải được dữ liệu");
+              return data.data;
+            });
+          });
+        }
+        function apiSaveHotspots(payload, retry) {
+          return fetch(apiUrl({ resource: "vr-hotspots" }), {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ data: payload }),
+          }).then(function (r) {
+            return r.json().then(function (data) {
+              if (r.status === 401 && retry !== false) {
+                return apiLogin().then(function () {
+                  return apiSaveHotspots(payload, false);
+                });
+              }
+              if (!r.ok || !data.ok) throw new Error(data.error || "Không lưu được dữ liệu");
+              return data;
+            });
+          });
+        }
+        function applyBackendData(data) {
+          amenityConfig = data.amenityConfig || amenityConfig || {};
+          hsData = data.hotspots || data;
+          saveAC();
+          saveHs();
+          if (currentPano) {
+            refreshHotspots();
+            refreshPlacedList();
+          }
+          updatePanoThumbs();
+          buildAmenityList("");
+        }
+        function currentBackendPayload() {
+          return { amenityConfig: amenityConfig, hotspots: hsData };
         }
 
         // ═══ THREE.JS ═══
@@ -1424,8 +1493,8 @@
           d.className = "pano-thumb";
           d.dataset.key = p.key;
           d.innerHTML =
-            '<img src="' +
-            PANO_PATH +
+            '<img loading="lazy" decoding="async" src="' +
+            PANO_THUMB_PATH +
             p.file +
             '" onerror="this.style.display=\'none\'"/><span class="plbl">' +
             (PANO_SHORT[p.key] || p.key) +
@@ -1703,6 +1772,33 @@
             } catch (e) {}
           });
         document
+          .getElementById("btnLoadApi")
+          .addEventListener("click", function () {
+            var btn = this;
+            apiLoadHotspots()
+              .then(function (data) {
+                applyBackendData(data);
+                document.getElementById("exportArea").value = JSON.stringify(currentBackendPayload(), null, 2);
+                flash(btn, "✓ Đã load!", "↻ Load từ website");
+              })
+              .catch(function (e) {
+                alert(e.message);
+              });
+          });
+        document
+          .getElementById("btnSaveApi")
+          .addEventListener("click", function () {
+            var btn = this;
+            apiSaveHotspots(currentBackendPayload())
+              .then(function () {
+                document.getElementById("exportArea").value = JSON.stringify(currentBackendPayload(), null, 2);
+                flash(btn, "✓ Đã lưu!", "💾 Lưu lên website");
+              })
+              .catch(function (e) {
+                alert(e.message);
+              });
+          });
+        document
           .getElementById("btnImport")
           .addEventListener("click", function () {
             var txt = document.getElementById("exportArea").value.trim();
@@ -1779,6 +1875,11 @@
         }
 
         initThree();
+        apiLoadHotspots()
+          .then(function (data) {
+            applyBackendData(data);
+          })
+          .catch(function () {});
         updateBadge();
       })();
     </script>
