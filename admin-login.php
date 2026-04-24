@@ -429,8 +429,11 @@ body{
           }
           return data;
         });
-      }).then(function () {
-        showSuccess('Đăng nhập thành công, đang chuyển vào trang quản trị...');
+      }).then(function (data) {
+        var successMessage = data && data.warning
+          ? data.warning + ' Đang chuyển vào trang quản trị...'
+          : 'Đăng nhập thành công, đang chuyển vào trang quản trị...';
+        showSuccess(successMessage);
         window.setTimeout(function () {
           window.location.replace(ADMIN_PANEL_URL);
         }, 450);

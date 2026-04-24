@@ -22,6 +22,18 @@ if ($basePath === '/' || $basePath === '.') {
 }
 $adminLoginUrl = ($basePath ?: '') . '/admin';
 $baseHref = ($basePath ?: '') . '/';
+$currentAdmin = $_SESSION['bds_admin'] ?? null;
+if (!is_array($currentAdmin)) {
+    $currentAdmin = [
+        'id' => null,
+        'username' => 'admin',
+        'email' => '',
+        'display_name' => 'Admin',
+        'role' => 'super_admin',
+        'legacy' => true,
+        'source' => 'legacy',
+    ];
+}
 
 header('X-Robots-Tag: noindex, nofollow', true);
 
@@ -278,6 +290,7 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
     <button class="btn-mobile-menu" id="btn-menu"><i class="fa-solid fa-bars"></i></button>
     <div class="breadcrumb" id="breadcrumb">Admin / <b>Dashboard</b></div>
     <div class="header-actions">
+      <span class="btn btn-sm" style="cursor:default"><i class="fa-solid fa-user-shield"></i> <?= htmlspecialchars((string)($currentAdmin['display_name'] ?? $currentAdmin['username'] ?? 'Admin'), ENT_QUOTES, 'UTF-8') ?></span>
       <a href="index.html" target="_blank" class="btn btn-sm"><i class="fa-solid fa-external-link-alt"></i> Xem Website</a>
       <button type="button" class="btn btn-sm" onclick="logoutAdmin()"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</button>
     </div>
@@ -475,23 +488,115 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
     <!-- ═══ PAGE: SETTINGS ═══ -->
     <div class="page" id="page-settings">
       <div class="panel">
-        <div class="panel-head"><h3><i class="fa-solid fa-gear"></i> Cài đặt chung</h3></div>
+        <div class="panel-head"><h3><i class="fa-solid fa-shield-halved"></i> Tài khoản đang đăng nhập</h3></div>
         <div class="panel-body">
-          <div style="display:grid;gap:16px;max-width:500px">
-            <div>
-              <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Tên dự án</label>
-              <input type="text" value="BÍCH ĐỘNG LAKESIDE" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none"/>
+          <div class="stats-grid" style="margin-bottom:0">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(59,130,246,.12);color:var(--blue)"><i class="fa-solid fa-user"></i></div>
+              <div class="stat-value" id="settings-current-name" style="font-size:18px">—</div>
+              <div class="stat-label">Tên hiển thị</div>
             </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Hotline</label>
-              <input type="text" value="0123456789" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none"/>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(34,197,94,.12);color:var(--green)"><i class="fa-solid fa-id-badge"></i></div>
+              <div class="stat-value" id="settings-current-role" style="font-size:18px">—</div>
+              <div class="stat-label">Quyền hiện tại</div>
             </div>
-            <div>
-              <label style="font-size:11px;font-weight:600;color:var(--text2);display:block;margin-bottom:6px">Favicon (path)</label>
-              <input type="text" value="favicon.webp" style="width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13px;outline:none"/>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(246,228,147,.12);color:var(--gold2)"><i class="fa-solid fa-database"></i></div>
+              <div class="stat-value" id="settings-current-source" style="font-size:18px">—</div>
+              <div class="stat-label">Nguồn đăng nhập</div>
             </div>
-            <button class="btn btn-primary" style="width:fit-content"><i class="fa-solid fa-save"></i> Lưu cài đặt</button>
+            <div class="stat-card">
+              <div class="stat-icon" style="background:rgba(13,148,136,.12);color:var(--teal2)"><i class="fa-solid fa-code-branch"></i></div>
+              <div class="stat-value" id="settings-app-version" style="font-size:18px">—</div>
+              <div class="stat-label">Version cache website</div>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-key"></i> Đổi mật khẩu của bạn</h3></div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="change-password-current">Mật khẩu hiện tại</label>
+              <input id="change-password-current" type="password" autocomplete="current-password" placeholder="Nhập mật khẩu hiện tại"/>
+            </div>
+            <div class="field">
+              <label for="change-password-new">Mật khẩu mới</label>
+              <input id="change-password-new" type="password" autocomplete="new-password" placeholder="Ít nhất 8 ký tự"/>
+            </div>
+            <div class="field">
+              <label for="change-password-confirm">Xác nhận mật khẩu mới</label>
+              <input id="change-password-confirm" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu mới"/>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="changeOwnPassword()"><i class="fa-solid fa-key"></i> Cập nhật mật khẩu</button>
+            <span id="password-change-hint" style="font-size:12px;color:var(--text3)">Nếu bạn đang đăng nhập bằng tài khoản legacy cũ, hãy tạo/reset user database rồi đăng nhập lại.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="user-management-panel">
+        <div class="panel-head">
+          <h3><i class="fa-solid fa-users-gear"></i> Quản lý user admin</h3>
+          <div style="font-size:11px;color:var(--text3)">Thêm user, đổi role, khóa user, reset mật khẩu</div>
+        </div>
+        <div class="panel-body">
+          <div class="form-grid">
+            <div class="field">
+              <label for="new-user-username">Username</label>
+              <input id="new-user-username" type="text" placeholder="vd: editor_bichdong"/>
+            </div>
+            <div class="field">
+              <label for="new-user-email">Email</label>
+              <input id="new-user-email" type="email" placeholder="vd: editor@domain.com"/>
+            </div>
+            <div class="field">
+              <label for="new-user-display-name">Tên hiển thị</label>
+              <input id="new-user-display-name" type="text" placeholder="vd: Nhân viên nội dung"/>
+            </div>
+            <div class="field">
+              <label for="new-user-password">Mật khẩu ban đầu</label>
+              <input id="new-user-password" type="text" placeholder="Ít nhất 8 ký tự"/>
+            </div>
+            <div class="field">
+              <label for="new-user-role">Quyền</label>
+              <select id="new-user-role">
+                <option value="editor">Editor</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" onclick="createAdminUser()"><i class="fa-solid fa-user-plus"></i> Thêm user admin</button>
+            <span style="font-size:12px;color:var(--text3)">User low-tech chỉ cần nhận username + mật khẩu do bạn tạo hoặc reset.</span>
+          </div>
+          <div id="user-management-legacy-hint" style="display:none;margin-top:14px;padding:12px 14px;border:1px solid rgba(246,228,147,.2);border-radius:10px;background:rgba(246,228,147,.06);font-size:12px;color:var(--gold)"></div>
+          <div id="users-table-wrap" style="margin-top:18px"></div>
+          <div id="reset-password-result" style="display:none;margin-top:14px;padding:14px;border:1px solid rgba(34,197,94,.25);border-radius:10px;background:rgba(34,197,94,.07)"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3><i class="fa-solid fa-broom-ball"></i> Xóa cache và preload lại website</h3></div>
+        <div class="panel-body">
+          <p style="font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:14px">
+            Nút này sẽ tạo version mới cho website, giúp trình duyệt tự lấy CSS/JS mới mà không bắt người dùng mở tab ẩn danh hay tự xóa cache tay. Sau đó hệ thống sẽ tự preload lại các URL quan trọng để web lên nhanh hơn.
+          </p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="cache-refresh-note">Ghi chú</label>
+              <input id="cache-refresh-note" type="text" placeholder="vd: Sau khi cập nhật giao diện trang chủ"/>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <button class="btn btn-primary" id="btn-refresh-cache" onclick="refreshSiteCache()"><i class="fa-solid fa-rotate"></i> Xóa cache & preload</button>
+            <span id="cache-refresh-status" style="font-size:12px;color:var(--text3)">Chưa chạy lần nào trong phiên này.</span>
+          </div>
+          <div id="cache-refresh-results" style="margin-top:16px"></div>
         </div>
       </div>
     </div>
@@ -553,7 +658,11 @@ body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--te
 
 var API_BASE = 'api/index.php';
 var ADMIN_LOGIN_URL = <?= json_encode($adminLoginUrl, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
-  var JSON_RESOURCES = {
+var CURRENT_ADMIN = <?= json_encode($currentAdmin, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?>;
+var APP_STATUS = null;
+var ADMIN_USERS = [];
+var SETTINGS_LOADED = false;
+var JSON_RESOURCES = {
   'vr-hotspot-data.json': 'vr-hotspots',
   'vr_config.json': 'vr-config',
   'masterplan.json': 'masterplan',
@@ -576,13 +685,56 @@ function apiUrl(params) {
   return API_BASE + '?' + new URLSearchParams(params).toString();
 }
 
+function handleApiResponse(r) {
+  return r.json().then(function(data) {
+    if (!r.ok || !data.ok) throw new Error(data.error || 'API error');
+    return data;
+  });
+}
+
 function getResourceForFile(filename) {
   return JSON_RESOURCES[filename] || JSON_RESOURCES[filename.replace(/^data\//, '')] || '';
 }
 
 function apiFetch(resource) {
   return fetch(apiUrl({ resource: resource }), { cache: 'no-store', credentials: 'same-origin' })
-    .then(function(r) { return r.json().then(function(data) { if (!r.ok || !data.ok) throw new Error(data.error || 'API error'); return data.data; }); });
+    .then(handleApiResponse)
+    .then(function(data) { return data.data; });
+}
+
+function apiStatus() {
+  return fetch(apiUrl({ action: 'status' }), { cache: 'no-store', credentials: 'same-origin' })
+    .then(handleApiResponse);
+}
+
+function apiAction(action, payload, options) {
+  options = options || {};
+  var method = options.method || 'POST';
+  var query = options.query || {};
+  query.action = action;
+  var requestOptions = {
+    method: method,
+    credentials: 'same-origin',
+    cache: 'no-store'
+  };
+
+  if (method === 'GET') {
+    return fetch(apiUrl(query), requestOptions).then(handleApiResponse);
+  }
+
+  requestOptions.headers = { 'Content-Type': 'application/json' };
+  requestOptions.body = JSON.stringify(payload || {});
+  return fetch(apiUrl(query), requestOptions).then(function(r) {
+    return r.json().then(function(data) {
+      if (r.status === 401 && options.retry !== false) {
+        return apiLogin().then(function() {
+          return apiAction(action, payload, Object.assign({}, options, { retry: false }));
+        });
+      }
+      if (!r.ok || !data.ok) throw new Error(data.error || 'API error');
+      return data;
+    });
+  });
 }
 
 function apiLogin() {
@@ -640,9 +792,17 @@ function formatSize(bytes) {
   return (i === 0 ? size : size.toFixed(size >= 10 ? 1 : 2)) + ' ' + units[i];
 }
 
-function apiListFiles(path) {
+function apiListFiles(path, retry) {
   return fetch(apiUrl({ action: 'list-files', path: path || '' }), { cache: 'no-store', credentials: 'same-origin' })
-    .then(function(r) { return r.json().then(function(data) { if (!r.ok || !data.ok) throw new Error(data.error || 'Không tải được danh sách file'); return data.items || []; }); });
+    .then(function(r) {
+      return r.json().then(function(data) {
+        if (r.status === 401 && retry !== false) {
+          return apiLogin().then(function() { return apiListFiles(path, false); });
+        }
+        if (!r.ok || !data.ok) throw new Error(data.error || 'Không tải được danh sách file');
+        return data.items || [];
+      });
+    });
 }
 
 function apiUploadFile(path, file, retry) {
@@ -797,6 +957,284 @@ function logoutAdmin() {
   });
 }
 
+function friendlyRole(role) {
+  return role === 'super_admin' ? 'Super Admin' : 'Editor';
+}
+
+function friendlySource(user) {
+  if (!user) return 'Chưa rõ';
+  return user.legacy ? 'Legacy config' : 'Database';
+}
+
+function formatDateTime(value) {
+  if (!value) return '—';
+  var date = new Date(String(value).replace(' ', 'T'));
+  if (isNaN(date.getTime())) return String(value);
+  return date.toLocaleString('vi-VN');
+}
+
+function copyPlainText(value) {
+  if (!navigator.clipboard || !navigator.clipboard.writeText) {
+    showToast('Trình duyệt chưa hỗ trợ copy tự động', 'error');
+    return;
+  }
+  navigator.clipboard.writeText(String(value || '')).then(function() {
+    showToast('Đã copy vào clipboard', 'success');
+  }).catch(function() {
+    showToast('Không copy được vào clipboard', 'error');
+  });
+}
+
+function renderSettingsSummary() {
+  var user = (APP_STATUS && APP_STATUS.user) || CURRENT_ADMIN || {};
+  document.getElementById('settings-current-name').textContent = user.display_name || user.username || '—';
+  document.getElementById('settings-current-role').textContent = friendlyRole(user.role || 'editor');
+  document.getElementById('settings-current-source').textContent = friendlySource(user);
+  document.getElementById('settings-app-version').textContent = (APP_STATUS && APP_STATUS.appVersion) || '—';
+  var hint = document.getElementById('password-change-hint');
+  if (hint) {
+    hint.textContent = user.legacy
+      ? 'Bạn đang đăng nhập bằng tài khoản legacy cũ. Hãy tạo hoặc reset user database rồi đăng nhập lại để đổi mật khẩu trong database.'
+      : 'Đổi mật khẩu trực tiếp trong database. Mật khẩu mới nên dài tối thiểu 8 ký tự.';
+  }
+}
+
+function renderUsersTable() {
+  var wrap = document.getElementById('users-table-wrap');
+  if (!wrap) return;
+
+  if (!APP_STATUS || !APP_STATUS.dbConnected) {
+    wrap.innerHTML = '<div class="empty-state"><i class="fa-solid fa-database"></i><p>Website chưa kết nối được database nên chưa tải được danh sách user.</p></div>';
+    return;
+  }
+
+  if (!ADMIN_USERS.length) {
+    wrap.innerHTML = '<div class="empty-state"><i class="fa-solid fa-users"></i><p>Chưa có user nào trong database.</p></div>';
+    return;
+  }
+
+  var html = '<div style="overflow:auto"><table class="data-table"><thead><tr>' +
+    '<th>Username</th><th>Email</th><th>Tên hiển thị</th><th>Quyền</th><th>Kích hoạt</th><th>Đăng nhập cuối</th><th style="min-width:210px">Hành động</th>' +
+    '</tr></thead><tbody>';
+
+  ADMIN_USERS.forEach(function(user) {
+    html += '<tr>' +
+      '<td><div style="font-weight:600">' + escapeHtml(user.username) + '</div><div style="font-size:10px;color:var(--text3)">ID: ' + user.id + '</div></td>' +
+      '<td><input type="email" id="user-email-' + user.id + '" value="' + escapeHtml(user.email || '') + '" /></td>' +
+      '<td><input type="text" id="user-display-' + user.id + '" value="' + escapeHtml(user.display_name || '') + '" /></td>' +
+      '<td><select id="user-role-' + user.id + '">' +
+        '<option value="editor"' + (user.role === 'editor' ? ' selected' : '') + '>Editor</option>' +
+        '<option value="super_admin"' + (user.role === 'super_admin' ? ' selected' : '') + '>Super Admin</option>' +
+      '</select></td>' +
+      '<td><label style="display:inline-flex;align-items:center;gap:8px"><input type="checkbox" id="user-active-' + user.id + '"' + (user.is_active ? ' checked' : '') + ' /><span>' + (user.is_active ? 'Đang bật' : 'Đang tắt') + '</span></label></td>' +
+      '<td><div>' + escapeHtml(formatDateTime(user.last_login_at)) + '</div><div style="font-size:10px;color:var(--text3)">' + escapeHtml(user.last_login_ip || '—') + '</div></td>' +
+      '<td>' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+          '<button class="btn btn-sm btn-primary" onclick="saveAdminUser(' + user.id + ')"><i class="fa-solid fa-save"></i> Lưu</button>' +
+          '<button class="btn btn-sm" onclick="resetAdminUserPassword(' + user.id + ')"><i class="fa-solid fa-key"></i> Reset pass</button>' +
+        '</div>' +
+      '</td>' +
+      '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function renderResetPasswordResult(data) {
+  var box = document.getElementById('reset-password-result');
+  if (!box) return;
+  box.style.display = 'block';
+  box.innerHTML =
+    '<div style="display:flex;gap:10px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap">' +
+      '<div>' +
+        '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Mật khẩu mới / tạm thời</div>' +
+        '<div style="font-size:20px;font-weight:700;color:var(--text);font-family:JetBrains Mono,monospace">' + escapeHtml(data.temporary_password || '') + '</div>' +
+        '<div style="margin-top:8px;font-size:12px;color:var(--text2)">User: <b>' + escapeHtml((data.user && data.user.username) || '') + '</b>. ' +
+          (data.generated ? 'Hệ thống vừa tự sinh mật khẩu tạm cho user này.' : 'Mật khẩu bạn nhập đã được áp dụng.') +
+        '</div>' +
+      '</div>' +
+      '<button class="btn btn-sm" data-password="' + escapeHtml(data.temporary_password || '') + '" onclick="copyPlainText(this.getAttribute(\'data-password\'))"><i class="fa-solid fa-copy"></i> Copy mật khẩu</button>' +
+    '</div>';
+}
+
+function renderCacheResults(data) {
+  var box = document.getElementById('cache-refresh-results');
+  if (!box) return;
+  var results = (data && data.results) || [];
+  if (!results.length) {
+    box.innerHTML = '<div class="empty-state" style="padding:28px 12px"><i class="fa-solid fa-bolt"></i><p>Chưa có kết quả preload.</p></div>';
+    return;
+  }
+
+  var html = '<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">Version mới: <b style="color:var(--text)">' + escapeHtml(data.version_tag || '—') + '</b> | Thành công: <b style="color:var(--green)">' + escapeHtml(String((data.summary && data.summary.success) || 0)) + '</b> / ' + escapeHtml(String((data.summary && data.summary.total) || results.length)) + '</div>';
+  html += '<div style="overflow:auto"><table class="data-table"><thead><tr><th>URL preload</th><th>HTTP</th><th>Thời gian</th><th>Kết quả</th></tr></thead><tbody>';
+  results.forEach(function(item) {
+    html += '<tr>' +
+      '<td style="font-family:JetBrains Mono;word-break:break-all">' + escapeHtml(item.url || '') + '</td>' +
+      '<td>' + escapeHtml(String(item.status || 0)) + '</td>' +
+      '<td>' + escapeHtml(String(item.duration_ms || 0)) + ' ms</td>' +
+      '<td style="color:' + (item.ok ? 'var(--green)' : 'var(--red)') + '">' + (item.ok ? 'OK' : escapeHtml(item.error || 'Fail')) + '</td>' +
+      '</tr>';
+  });
+  html += '</tbody></table></div>';
+  box.innerHTML = html;
+}
+
+function loadAdminUsers() {
+  return apiAction('list-users', null, { method: 'GET' }).then(function(data) {
+    ADMIN_USERS = data.users || [];
+    renderUsersTable();
+    return data;
+  });
+}
+
+function loadSettingsPage(force) {
+  if (SETTINGS_LOADED && !force) {
+    renderSettingsSummary();
+    return Promise.resolve(APP_STATUS);
+  }
+
+  var legacyHint = document.getElementById('user-management-legacy-hint');
+  var userPanel = document.getElementById('user-management-panel');
+  return apiStatus().then(function(status) {
+    APP_STATUS = status;
+    CURRENT_ADMIN = status.user || CURRENT_ADMIN;
+    SETTINGS_LOADED = true;
+    renderSettingsSummary();
+
+    if (legacyHint) {
+      if (!status.dbConnected) {
+        legacyHint.style.display = 'block';
+        legacyHint.textContent = 'Database hiện chưa kết nối được. Hãy kiểm tra lại thông tin DB trong api/config.local.php hoặc biến môi trường hosting.';
+      } else if (status.user && status.user.legacy) {
+        legacyHint.style.display = 'block';
+        legacyHint.textContent = 'Bạn đang đăng nhập bằng tài khoản legacy cũ. Bạn vẫn có thể tạo / reset user database ở đây, sau đó đăng xuất và đăng nhập lại bằng user database.';
+      } else {
+        legacyHint.style.display = 'none';
+        legacyHint.textContent = '';
+      }
+    }
+
+    if (userPanel) {
+      if (!status.user || (!status.user.legacy && status.user.role !== 'super_admin')) {
+        userPanel.style.display = 'none';
+      } else {
+        userPanel.style.display = '';
+      }
+    }
+
+    if (status.dbConnected && status.user && (status.user.legacy || status.user.role === 'super_admin')) {
+      return loadAdminUsers();
+    }
+
+    ADMIN_USERS = [];
+    renderUsersTable();
+    return status;
+  }).catch(function(e) {
+    renderUsersTable();
+    showToast(e.message, 'error');
+    throw e;
+  });
+}
+
+function createAdminUser() {
+  var payload = {
+    username: document.getElementById('new-user-username').value.trim(),
+    email: document.getElementById('new-user-email').value.trim(),
+    display_name: document.getElementById('new-user-display-name').value.trim(),
+    password: document.getElementById('new-user-password').value,
+    role: document.getElementById('new-user-role').value
+  };
+
+  if (!payload.username || !payload.email || !payload.password) {
+    showToast('Vui lòng nhập username, email và mật khẩu cho user mới', 'error');
+    return;
+  }
+
+  apiAction('create-user', payload).then(function() {
+    document.getElementById('new-user-username').value = '';
+    document.getElementById('new-user-email').value = '';
+    document.getElementById('new-user-display-name').value = '';
+    document.getElementById('new-user-password').value = '';
+    document.getElementById('new-user-role').value = 'editor';
+    showToast('Đã tạo user admin mới', 'success');
+    return loadAdminUsers();
+  }).catch(function(e) {
+    showToast(e.message, 'error');
+  });
+}
+
+function saveAdminUser(userId) {
+  var payload = {
+    user_id: userId,
+    email: document.getElementById('user-email-' + userId).value.trim(),
+    display_name: document.getElementById('user-display-' + userId).value.trim(),
+    role: document.getElementById('user-role-' + userId).value,
+    is_active: document.getElementById('user-active-' + userId).checked
+  };
+
+  apiAction('update-user', payload).then(function() {
+    showToast('Đã cập nhật user', 'success');
+    return loadAdminUsers();
+  }).catch(function(e) {
+    showToast(e.message, 'error');
+  });
+}
+
+function resetAdminUserPassword(userId) {
+  var manualPassword = prompt('Nhập mật khẩu mới cho user này.\nĐể trống rồi bấm OK nếu muốn hệ thống tự sinh mật khẩu tạm.', '');
+  if (manualPassword === null) return;
+
+  apiAction('reset-user-password', {
+    user_id: userId,
+    new_password: String(manualPassword || '').trim()
+  }).then(function(data) {
+    renderResetPasswordResult(data);
+    showToast('Đã reset mật khẩu user', 'success');
+  }).catch(function(e) {
+    showToast(e.message, 'error');
+  });
+}
+
+function changeOwnPassword() {
+  var payload = {
+    current_password: document.getElementById('change-password-current').value,
+    new_password: document.getElementById('change-password-new').value,
+    confirm_password: document.getElementById('change-password-confirm').value
+  };
+
+  apiAction('change-password', payload).then(function() {
+    document.getElementById('change-password-current').value = '';
+    document.getElementById('change-password-new').value = '';
+    document.getElementById('change-password-confirm').value = '';
+    showToast('Đã đổi mật khẩu thành công', 'success');
+    return loadSettingsPage(true);
+  }).catch(function(e) {
+    showToast(e.message, 'error');
+  });
+}
+
+function refreshSiteCache() {
+  var button = document.getElementById('btn-refresh-cache');
+  var status = document.getElementById('cache-refresh-status');
+  var note = document.getElementById('cache-refresh-note').value.trim();
+  button.disabled = true;
+  status.textContent = 'Đang tạo version mới và preload website...';
+
+  apiAction('refresh-app-cache', { note: note }).then(function(data) {
+    renderCacheResults(data);
+    status.textContent = 'Đã xong. Version hiện tại: ' + (data.version_tag || '—');
+    showToast('Đã xóa cache và preload website', 'success');
+    return loadSettingsPage(true);
+  }).catch(function(e) {
+    status.textContent = e.message || 'Không chạy được preload cache';
+    showToast(e.message, 'error');
+  }).finally(function() {
+    button.disabled = false;
+  });
+}
+
 function buildLibraryVideo(src, name, title) {
   var cleanSrc = normalizeAssetPathInput(src);
   return {
@@ -867,6 +1305,7 @@ function switchPage(pageId) {
   if (pageId === 'hotspot-editor') loadHotspotEditor();
   if (pageId === 'thamquan-config') loadThamQuanAdmin();
   if (pageId === 'masterplan') loadMasterplan();
+  if (pageId === 'settings') loadSettingsPage();
   // Close mobile sidebar
   document.getElementById('sidebar').classList.remove('open');
 }

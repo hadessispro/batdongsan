@@ -13,16 +13,36 @@
       href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Cormorant+Garamond:wght@600;700&family=Great+Vibes&display=swap"
       rel="stylesheet"
     />
-    <link rel="icon" href="favicon.webp" type="image/png" />
-    <link rel="stylesheet" href="style.css?v=28" />
+    <link rel="icon" href="favicon.webp" type="image/png" id="site-favicon" />
+    <script src="asset-version.js"></script>
+    <script>
+      (function loadVersionedStyles(version) {
+        function writeStyle(href) {
+          document.write(
+            '<link rel="stylesheet" href="' +
+              href +
+              '?v=' +
+              encodeURIComponent(version) +
+              '" />'
+          );
+        }
+
+        var favicon = document.getElementById("site-favicon");
+        if (favicon) {
+          favicon.href = "favicon.webp?v=" + encodeURIComponent(version);
+        }
+
+        writeStyle("style.css");
+        writeStyle("vitri.css");
+        writeStyle("thamquan-vr360.css");
+        writeStyle("matbang-info.css");
+      })(window.__BDS_ASSET_VERSION__ || "static");
+    </script>
     <link
       href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css"
       rel="stylesheet"
     />
     <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
-    <link rel="stylesheet" href="vitri.css?v=1" />
-    <link rel="stylesheet" href="thamquan-vr360.css?v=1" />
-    <link rel="stylesheet" href="matbang-info.css?v=1" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
@@ -2161,10 +2181,24 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="thamquan-vr360.js?v=2"></script>
-    <script src="main.js?v=37"></script>
-    <script src="matbang.js?v=1"></script>
-    <script src="vitri.js?v=2"></script>
+    <script>
+      (function loadVersionedScripts(version) {
+        function writeScript(src) {
+          document.write(
+            '<script src="' +
+              src +
+              '?v=' +
+              encodeURIComponent(version) +
+              '"><\/script>'
+          );
+        }
+
+        writeScript("thamquan-vr360.js");
+        writeScript("main.js");
+        writeScript("matbang.js");
+        writeScript("vitri.js");
+      })(window.__BDS_ASSET_VERSION__ || "static");
+    </script>
 
     <!-- ═══ Video Lightbox JS ═══ -->
     <script>

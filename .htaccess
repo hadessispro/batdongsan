@@ -15,8 +15,12 @@ Options -Indexes
   RewriteCond %{THE_REQUEST} \s/+admin\.html[\s?] [NC]
   RewriteRule ^admin\.html$ admin/panel [R=302,L]
 
+  RewriteCond %{THE_REQUEST} \s/+asset-version\.php[\s?] [NC]
+  RewriteRule ^asset-version\.php$ asset-version.js [R=302,L]
+
   RewriteRule ^admin/?$ admin-login.php [L,QSA]
   RewriteRule ^admin/panel/?$ admin.php [L,QSA]
+  RewriteRule ^asset-version\.js$ asset-version.php [L,QSA]
 </IfModule>
 
 # ═══════════════════════════════════════════════════════════
@@ -97,8 +101,8 @@ Options -Indexes
     Header set Cache-Control "public, max-age=2592000"
   </FilesMatch>
 
-  # ── HTML → không cache ──
-  <FilesMatch "\.(html|htm)$">
+  # ── HTML / PHP bootstrap → không cache ──
+  <FilesMatch "\.(html|htm|php)$">
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 
