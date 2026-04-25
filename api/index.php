@@ -51,6 +51,9 @@ $allowedUploadExt = [
     'pdf',
 ];
 
+const BDS_LOGIN_MAX_FAILED_ATTEMPTS = 5;
+const BDS_LOGIN_LOCKOUT_SECONDS = 72 * 60 * 60;
+
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);
@@ -487,6 +490,19 @@ function generate_temp_password(int $length = 14): string
     return $password;
 }
 
+function login_lockout_message(?string $lockedUntil = null): string
+{
+    $base = 'Tài khoản đang bị khóa do nhập sai mật khẩu quá ' . BDS_LOGIN_MAX_FAILED_ATTEMPTS . ' lần.';
+    if ($lockedUntil) {
+        $timestamp = strtotime($lockedUntil);
+        if ($timestamp !== false) {
+            return $base . ' Vui lòng thử lại sau ' . date('H:i d/m/Y', $timestamp) . ' hoặc liên hệ quản trị viên để reset mật khẩu.';
+        }
+    }
+
+    return $base . ' Thời gian khóa là 72 giờ hoặc cho tới khi quản trị viên reset mật khẩu.';
+}
+
 function public_base_url(): string
 {
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (($_SERVER['SERVER_PORT'] ?? '') === '443')
@@ -693,15 +709,15 @@ function handle_database_login(PDO $pdo, string $login, string $password): array
     }
 
     if (!empty($row['locked_until']) && strtotime((string)$row['locked_until']) > time()) {
-        throw new RuntimeException('Tài khoản đang bị khóa tạm thời, vui lòng thử lại sau');
+        throw new RuntimeException(login_lockout_message((string)$row['locked_until']));
     }
 
     if (!password_verify($password, (string)$row['password_hash'])) {
         $failedAttempts = (int)$row['failed_attempts'] + 1;
         $lockedUntil = null;
-        if ($failedAttempts >= 5) {
-            $failedAttempts = 5;
-            $lockedUntil = date('Y-m-d H:i:s', time() + 15 * 60);
+        if ($failedAttempts >= BDS_LOGIN_MAX_FAILED_ATTEMPTS) {
+            $failedAttempts = BDS_LOGIN_MAX_FAILED_ATTEMPTS;
+            $lockedUntil = date('Y-m-d H:i:s', time() + BDS_LOGIN_LOCKOUT_SECONDS);
         }
         $stmt = $pdo->prepare('UPDATE admin_users SET failed_attempts = :failed_attempts, locked_until = :locked_until WHERE id = :id');
         $stmt->bindValue(':failed_attempts', $failedAttempts, PDO::PARAM_INT);
@@ -710,7 +726,7 @@ function handle_database_login(PDO $pdo, string $login, string $password): array
         $stmt->execute();
 
         if ($lockedUntil !== null) {
-            throw new RuntimeException('Nhập sai quá nhiều lần. Tài khoản bị khóa 15 phút');
+            throw new RuntimeException(login_lockout_message($lockedUntil));
         }
 
         throw new RuntimeException('Sai tài khoản hoặc mật khẩu');
