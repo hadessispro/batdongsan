@@ -1078,6 +1078,25 @@ function renderCacheResults(data) {
   if (!box) return;
   var results = (data && data.results) || [];
   if (!results.length) {
+    if (data && data.preload_mode === 'background') {
+      var pending = String((data.summary && data.summary.pending) || (data.summary && data.summary.total) || 0);
+      var preview = Array.isArray(data.targets_preview) ? data.targets_preview : [];
+      var html = '<div class="panel" style="margin-bottom:0;background:rgba(13,148,136,.06);border-color:rgba(20,184,166,.22)">' +
+        '<div class="panel-body" style="padding:16px 18px">' +
+        '<div style="font-size:12px;color:var(--text2);line-height:1.7">' +
+        '<b style="color:var(--text)">Version mới đã publish.</b> Hosting đang preload nền khoảng <b style="color:var(--teal2)">' + escapeHtml(pending) + '</b> URL quan trọng để tránh request admin bị treo 500.' +
+        '</div>';
+      if (preview.length) {
+        html += '<div style="margin-top:12px;overflow:auto"><table class="data-table"><thead><tr><th>URL dự kiến preload</th><th>Trạng thái</th></tr></thead><tbody>';
+        preview.forEach(function(url) {
+          html += '<tr><td style="font-family:JetBrains Mono;word-break:break-all">' + escapeHtml(url) + '</td><td style="color:var(--gold)">Đang chạy nền</td></tr>';
+        });
+        html += '</tbody></table></div>';
+      }
+      html += '</div></div>';
+      box.innerHTML = html;
+      return;
+    }
     box.innerHTML = '<div class="empty-state" style="padding:28px 12px"><i class="fa-solid fa-bolt"></i><p>Chưa có kết quả preload.</p></div>';
     return;
   }
@@ -1235,12 +1254,17 @@ function refreshSiteCache() {
   var status = document.getElementById('cache-refresh-status');
   var note = document.getElementById('cache-refresh-note').value.trim();
   button.disabled = true;
-  status.textContent = 'Đang tạo version mới và preload website...';
+  status.textContent = 'Đang publish version mới của website...';
 
   apiAction('refresh-app-cache', { note: note }).then(function(data) {
     renderCacheResults(data);
-    status.textContent = 'Đã xong. Version hiện tại: ' + (data.version_tag || '—');
-    showToast('Đã xóa cache và preload website', 'success');
+    if (data.preload_mode === 'background') {
+      status.textContent = 'Đã tạo version ' + (data.version_tag || '—') + '. Hosting đang preload nền, không chờ request admin chạy xong nữa.';
+      showToast('Đã publish version mới và chuyển preload sang chạy nền', 'success');
+    } else {
+      status.textContent = 'Đã xong. Version hiện tại: ' + (data.version_tag || '—');
+      showToast('Đã xóa cache và preload website', 'success');
+    }
     return loadSettingsPage(true);
   }).catch(function(e) {
     status.textContent = e.message || 'Không chạy được preload cache';

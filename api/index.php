@@ -53,12 +53,40 @@ $allowedUploadExt = [
 
 const BDS_LOGIN_MAX_FAILED_ATTEMPTS = 5;
 const BDS_LOGIN_LOCKOUT_SECONDS = 72 * 60 * 60;
+const BDS_PRELOAD_MEDIA_LIMIT = 12;
+
+function json_payload_string(array $payload): string
+{
+    $encoded = json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    return $encoded === false
+        ? '{"ok":false,"error":"Cannot encode JSON response"}'
+        : $encoded;
+}
 
 function respond(array $payload, int $status = 200): void
 {
     http_response_code($status);
-    echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    echo json_payload_string($payload);
     exit;
+}
+
+function respond_and_finish_request(array $payload, int $status = 200): void
+{
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+
+    ignore_user_abort(true);
+    http_response_code($status);
+    echo json_payload_string($payload);
+
+    if (function_exists('fastcgi_finish_request')) {
+        fastcgi_finish_request();
+        return;
+    }
+
+    @ob_flush();
+    @flush();
 }
 
 function read_json_body(): array
@@ -517,13 +545,32 @@ function public_base_url(): string
     return $scheme . '://' . $host . $basePath;
 }
 
+function encode_public_path(string $path): string
+{
+    $path = trim(str_replace('\\', '/', $path));
+    $path = preg_replace('#^(?:\./)+#', '', $path) ?? $path;
+    if ($path === '' || $path === '/') {
+        return '';
+    }
+
+    $segments = [];
+    foreach (explode('/', trim($path, '/')) as $segment) {
+        if ($segment === '' || $segment === '.' || $segment === '..') {
+            continue;
+        }
+        $segments[] = rawurlencode($segment);
+    }
+
+    return implode('/', $segments);
+}
+
 function public_url(string $path = '', array $query = []): string
 {
     $base = public_base_url();
-    $path = ltrim($path, '/');
+    $path = encode_public_path($path);
     $url = $base . ($path !== '' ? '/' . $path : '/');
     if ($query) {
-        $url .= '?' . http_build_query($query);
+        $url .= '?' . http_build_query($query, '', '&', PHP_QUERY_RFC3986);
     }
     return $url;
 }
@@ -653,7 +700,7 @@ function preload_collect_media_targets(string $root, string $versionTag): array
         }
         $seen[$normalized] = true;
         $targets[] = public_url($normalized, ['v' => $versionTag]);
-        if (count($targets) >= 40) {
+        if (count($targets) >= BDS_PRELOAD_MEDIA_LIMIT) {
             break;
         }
     }
@@ -661,7 +708,7 @@ function preload_collect_media_targets(string $root, string $versionTag): array
     return $targets;
 }
 
-function preload_cache_targets(string $versionTag, string $root): array
+function build_preload_targets(string $versionTag, string $root): array
 {
     $targets = [
         public_url('', ['v' => $versionTag]),
@@ -684,17 +731,43 @@ function preload_cache_targets(string $versionTag, string $root): array
 
     $targets = array_merge($targets, preload_collect_media_targets($root, $versionTag));
 
-    $results = [];
     $seen = [];
+    $uniqueTargets = [];
     foreach ($targets as $target) {
         if (isset($seen[$target])) {
             continue;
         }
         $seen[$target] = true;
+        $uniqueTargets[] = $target;
+    }
+
+    return $uniqueTargets;
+}
+
+function preload_cache_targets(string $versionTag, string $root): array
+{
+    $results = [];
+    foreach (build_preload_targets($versionTag, $root) as $target) {
         $results[] = preload_url($target);
     }
 
     return $results;
+}
+
+function summarize_preload_results(array $results): array
+{
+    $successCount = 0;
+    foreach ($results as $result) {
+        if (!empty($result['ok'])) {
+            $successCount++;
+        }
+    }
+
+    return [
+        'total' => count($results),
+        'success' => $successCount,
+        'failed' => count($results) - $successCount,
+    ];
 }
 
 function handle_database_login(PDO $pdo, string $login, string $password): array
@@ -1174,34 +1247,50 @@ if ($action === 'refresh-app-cache') {
         }
         $versionTag = bds_generate_version_tag();
         bds_store_app_version($config, $root, $versionTag, $admin['id'] ?? null, $note);
-        $results = preload_cache_targets($versionTag, $root);
-        $successCount = 0;
-        foreach ($results as $result) {
-            if (!empty($result['ok'])) {
-                $successCount++;
-            }
-        }
+        $targets = build_preload_targets($versionTag, $root);
 
-        $pdo = bds_try_pdo($config);
-        if ($pdo) {
-            audit_log($pdo, $admin, 'refresh_cache', $versionTag, 'success', [
-                'preloaded' => count($results),
-                'success' => $successCount,
-                'note' => $note,
-            ]);
-        }
-
-        respond([
+        respond_and_finish_request([
             'ok' => true,
             'version_tag' => $versionTag,
             'note' => $note,
-            'results' => $results,
+            'preload_mode' => 'background',
+            'message' => 'Version mới đã được publish. Hosting sẽ tiếp tục preload nền các URL quan trọng sau khi phản hồi admin.',
+            'results' => [],
+            'targets_preview' => array_slice($targets, 0, 8),
             'summary' => [
-                'total' => count($results),
-                'success' => $successCount,
-                'failed' => count($results) - $successCount,
+                'total' => count($targets),
+                'success' => 0,
+                'failed' => 0,
+                'pending' => count($targets),
             ],
         ]);
+
+        try {
+            $results = [];
+            foreach ($targets as $target) {
+                $results[] = preload_url($target);
+            }
+            $summary = summarize_preload_results($results);
+            $pdo = bds_try_pdo($config);
+            if ($pdo) {
+                audit_log($pdo, $admin, 'refresh_cache', $versionTag, 'success', [
+                    'preloaded' => $summary['total'],
+                    'success' => $summary['success'],
+                    'failed' => $summary['failed'],
+                    'note' => $note,
+                ]);
+            }
+        } catch (Throwable $backgroundError) {
+            $pdo = bds_try_pdo($config);
+            if ($pdo) {
+                audit_log($pdo, $admin, 'refresh_cache', $versionTag, 'fail', [
+                    'note' => $note,
+                    'reason' => $backgroundError->getMessage(),
+                ]);
+            }
+        }
+
+        exit;
     } catch (Throwable $e) {
         $pdo = bds_try_pdo($config);
         if ($pdo) {
