@@ -6,6 +6,13 @@
 (function initVitri() {
   "use strict";
 
+  function versionedAsset(url) {
+    if (typeof window.bdsVersionedAsset === "function") {
+      return window.bdsVersionedAsset(url);
+    }
+    return url;
+  }
+
   var PROJECT_CENTER = [106.1105, 21.2675];
   var PROJECT_NAME = "BÍCH ĐỘNG LAKESIDE";
   var MAPBOX_TOKEN =
@@ -14,7 +21,7 @@
   // ── Ranh giới polygon dự án ──
 
   // ── Ảnh masterplan overlay — 4 góc tọa độ ──
-  var MASTERPLAN_IMAGE = "./frames/masterplan.png";
+  var MASTERPLAN_IMAGE = versionedAsset("./frames/masterplan.png");
   var MASTERPLAN_COORDS = [
    [106.107924, 21.267104],  // Trên-Trái
       [106.111660, 21.271522],  // Trên-Phải
@@ -52,14 +59,14 @@
       PROJECT_CENTER = data.projectCenter;
     }
     if (data.projectName) PROJECT_NAME = data.projectName;
-    if (data.masterplanImage) MASTERPLAN_IMAGE = data.masterplanImage;
+    if (data.masterplanImage) MASTERPLAN_IMAGE = versionedAsset(data.masterplanImage);
     if (Array.isArray(data.masterplanCoords) && data.masterplanCoords.length === 4) {
       MASTERPLAN_COORDS = data.masterplanCoords;
     }
     var lkvImg = document.getElementById("vt-lkv-img");
-    if (lkvImg && data.lkvImage) lkvImg.src = data.lkvImage;
+    if (lkvImg && data.lkvImage) lkvImg.src = versionedAsset(data.lkvImage);
     var lkvVideo = document.getElementById("vt-lkv-video");
-    if (lkvVideo && data.lkvVideo) lkvVideo.src = data.lkvVideo;
+    if (lkvVideo && data.lkvVideo) lkvVideo.src = versionedAsset(data.lkvVideo);
     if (map) {
       map.setCenter(PROJECT_CENTER);
       addMasterplanOverlay();

@@ -4230,8 +4230,14 @@ loadAll();
 
   function normalizeAssetPath(src) {
     if (!src) return "";
-    if (/^(https?:)?\/\//.test(src) || src.indexOf("./") === 0 || src.indexOf("/") === 0) return src;
-    return "./" + src.replace(/^\/+/, "");
+    var normalized = src;
+    if (!/^(https?:)?\/\//.test(src) && src.indexOf("./") !== 0 && src.indexOf("/") !== 0) {
+      normalized = "./" + src.replace(/^\/+/, "");
+    }
+    if (typeof window.bdsVersionedAsset === "function") {
+      return window.bdsVersionedAsset(normalized);
+    }
+    return normalized;
   }
 
   // === DOM ELEMENTS ===

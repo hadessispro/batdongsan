@@ -570,7 +570,82 @@ function preload_url(string $url): array
     ];
 }
 
-function preload_cache_targets(string $versionTag): array
+function preload_collect_media_targets(string $root, string $versionTag): array
+{
+    $paths = [];
+
+    $libraryPath = $root . '/data/library.json';
+    if (is_file($libraryPath)) {
+        $library = json_decode((string)file_get_contents($libraryPath), true);
+        if (is_array($library)) {
+            foreach (($library['albums'] ?? []) as $album) {
+                if (!is_array($album)) {
+                    continue;
+                }
+                if (!empty($album['cover']) && is_string($album['cover'])) {
+                    $paths[] = $album['cover'];
+                }
+                foreach (($album['images'] ?? []) as $image) {
+                    if (is_string($image) && trim($image) !== '') {
+                        $paths[] = $image;
+                    }
+                }
+            }
+            foreach (($library['videos'] ?? []) as $video) {
+                if (!is_array($video)) {
+                    continue;
+                }
+                foreach (['thumb', 'cover', 'src'] as $key) {
+                    if (!empty($video[$key]) && is_string($video[$key])) {
+                        $paths[] = $video[$key];
+                    }
+                }
+            }
+        }
+    }
+
+    $vitriPath = $root . '/data/vitri_config.json';
+    if (is_file($vitriPath)) {
+        $vitri = json_decode((string)file_get_contents($vitriPath), true);
+        if (is_array($vitri)) {
+            foreach (['masterplanImage', 'lkvImage', 'lkvVideo'] as $key) {
+                if (!empty($vitri[$key]) && is_string($vitri[$key])) {
+                    $paths[] = $vitri[$key];
+                }
+            }
+        }
+    }
+
+    $thamquanPath = $root . '/data/thamquan_config.json';
+    if (is_file($thamquanPath)) {
+        $thamquan = json_decode((string)file_get_contents($thamquanPath), true);
+        if (is_array($thamquan) && !empty($thamquan['panoSrc']) && is_string($thamquan['panoSrc'])) {
+            $paths[] = $thamquan['panoSrc'];
+        }
+    }
+
+    $targets = [];
+    $seen = [];
+    foreach ($paths as $path) {
+        $normalized = trim(str_replace('\\', '/', $path));
+        if ($normalized === '' || preg_match('#^(https?:)?//#i', $normalized) || strpos($normalized, 'data:') === 0) {
+            continue;
+        }
+        $normalized = ltrim($normalized, './');
+        if ($normalized === '' || isset($seen[$normalized])) {
+            continue;
+        }
+        $seen[$normalized] = true;
+        $targets[] = public_url($normalized, ['v' => $versionTag]);
+        if (count($targets) >= 40) {
+            break;
+        }
+    }
+
+    return $targets;
+}
+
+function preload_cache_targets(string $versionTag, string $root): array
 {
     $targets = [
         public_url('', ['v' => $versionTag]),
@@ -590,6 +665,8 @@ function preload_cache_targets(string $versionTag): array
         public_url('data/vr_config.json', ['t' => $versionTag]),
         public_url('data/masterplan.json', ['t' => $versionTag]),
     ];
+
+    $targets = array_merge($targets, preload_collect_media_targets($root, $versionTag));
 
     $results = [];
     $seen = [];
@@ -1077,7 +1154,7 @@ if ($action === 'refresh-app-cache') {
 
     $versionTag = bds_generate_version_tag();
     bds_store_app_version($config, $root, $versionTag, $admin['id'] ?? null, $note);
-    $results = preload_cache_targets($versionTag);
+    $results = preload_cache_targets($versionTag, $root);
     $successCount = 0;
     foreach ($results as $result) {
         if (!empty($result['ok'])) {

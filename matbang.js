@@ -8,6 +8,13 @@
 (function initMatBang() {
   "use strict";
 
+  function versionedAsset(url) {
+    if (typeof window.bdsVersionedAsset === "function") {
+      return window.bdsVersionedAsset(url);
+    }
+    return url;
+  }
+
   var overlay = document.getElementById("matbang-overlay");
   var navMatBang = document.getElementById("nav-gallery");
   var stageEl = document.getElementById("stage");
@@ -861,7 +868,7 @@
       } else if (imgBg) {
         imgBg.onload = onImageReady;
         if (!imgBg.src || imgBg.src === window.location.href)
-          imgBg.src = "./frames/matbang/matbangbackground.jpg";
+          imgBg.src = versionedAsset("./frames/matbang/matbangbackground.jpg");
       }
     } else {
       setupPanZoom();

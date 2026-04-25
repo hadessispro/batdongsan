@@ -16,21 +16,52 @@
     <link rel="icon" href="favicon.webp" type="image/png" id="site-favicon" />
     <script src="asset-version.js"></script>
     <script>
-      (function loadVersionedStyles(version) {
+      (function bootVersionedAssets(version) {
+        function versionAsset(url) {
+          if (!url) return "";
+          var raw = String(url);
+          if (/^(data:|blob:|javascript:|mailto:|tel:|#)/i.test(raw)) return raw;
+          if (/^(https?:)?\/\//i.test(raw)) return raw;
+
+          var hashIndex = raw.indexOf("#");
+          var hash = hashIndex >= 0 ? raw.slice(hashIndex) : "";
+          var withoutHash = hashIndex >= 0 ? raw.slice(0, hashIndex) : raw;
+          var queryIndex = withoutHash.indexOf("?");
+          var path = queryIndex >= 0 ? withoutHash.slice(0, queryIndex) : withoutHash;
+          var search = queryIndex >= 0 ? withoutHash.slice(queryIndex + 1) : "";
+          var params = new URLSearchParams(search);
+          params.set("v", version);
+          return path + "?" + params.toString() + hash;
+        }
+
         function writeStyle(href) {
           document.write(
             '<link rel="stylesheet" href="' +
-              href +
-              '?v=' +
-              encodeURIComponent(version) +
+              versionAsset(href) +
               '" />'
           );
         }
 
+        window.__BDS_MEDIA_VERSION__ = version;
+        window.bdsVersionedAsset = versionAsset;
+
         var favicon = document.getElementById("site-favicon");
         if (favicon) {
-          favicon.href = "favicon.webp?v=" + encodeURIComponent(version);
+          favicon.href = versionAsset("favicon.webp");
         }
+
+        document.documentElement.style.setProperty(
+          "--bds-gallery-hero-bg",
+          'url("' + versionAsset("./frames/galley/7.jpg") + '")'
+        );
+        document.documentElement.style.setProperty(
+          "--bds-gallery-blur-bg",
+          'url("' + versionAsset("./frames/galley/7.jpg") + '")'
+        );
+        document.documentElement.style.setProperty(
+          "--bds-vitri-icon-bg",
+          'url("' + versionAsset("./frames/galley/vitriicon.jpg") + '")'
+        );
 
         writeStyle("style.css");
         writeStyle("vitri.css");

@@ -2012,7 +2012,7 @@ body {
   position: relative;
   /* ★ Background image phủ toàn bộ + fallback color tối */
   background-color: #1a1a1a;
-  background-image: url("./frames/galley/7.jpg");
+  background-image: var(--bds-gallery-hero-bg, url("./frames/galley/7.jpg"));
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -2289,7 +2289,7 @@ body {
   content: "";
   position: fixed;
   inset: 0;
-  background: url("./frames/galley/7.jpg") center/cover no-repeat;
+  background: var(--bds-gallery-blur-bg, url("./frames/galley/7.jpg")) center/cover no-repeat;
   filter: blur(20px) brightness(0.4);
   z-index: -1;
   pointer-events: none;

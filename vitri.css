@@ -155,7 +155,7 @@
 .vt-marker-icon {
   width: 110px;
   height: 110px;
-  background-image: url("./frames/galley/vitriicon.jpg");
+  background-image: var(--bds-vitri-icon-bg, url("./frames/galley/vitriicon.jpg"));
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;

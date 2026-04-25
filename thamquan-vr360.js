@@ -29,7 +29,14 @@
     overlay.appendChild(hsContainer);
   }
 
-  var PANO_SRC = "frames/tienich/PANO_1_1.jpg";
+  function versionedAsset(url) {
+    if (typeof window.bdsVersionedAsset === "function") {
+      return window.bdsVersionedAsset(url);
+    }
+    return url;
+  }
+
+  var PANO_SRC = versionedAsset("frames/tienich/PANO_1_1.jpg");
   var SPHERE_R = 500;
   var IS_MOBILE_VR = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
@@ -136,7 +143,7 @@
   function applyThamQuanConfig(data) {
     if (!data || typeof data !== "object") return;
     if (typeof data.panoSrc === "string" && data.panoSrc.trim()) {
-      PANO_SRC = data.panoSrc.trim();
+      PANO_SRC = versionedAsset(data.panoSrc.trim());
       panoTexture = null;
       panoReady = false;
       textureApplied = false;
