@@ -2275,7 +2275,7 @@
         var checking = false;
         var reloading = false;
         var reloadTimer = null;
-        var CHECK_MS = 30000;
+        var CHECK_MS = 10000;
         var pollTimer = null;
 
         function ensureBadge() {
@@ -2421,7 +2421,7 @@
           tryApplyPendingUpdate();
         }, CHECK_MS);
 
-        window.setTimeout(pollVersion, 8000);
+        window.setTimeout(pollVersion, 4000);
       })();
     </script>
   </body>
