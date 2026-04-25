@@ -1168,36 +1168,54 @@ if ($action === 'refresh-app-cache') {
     $note = trim((string)($body['note'] ?? ''));
     $note = $note !== '' ? $note : 'Manual cache refresh from admin';
 
-    $versionTag = bds_generate_version_tag();
-    bds_store_app_version($config, $root, $versionTag, $admin['id'] ?? null, $note);
-    $results = preload_cache_targets($versionTag, $root);
-    $successCount = 0;
-    foreach ($results as $result) {
-        if (!empty($result['ok'])) {
-            $successCount++;
+    try {
+        if (function_exists('set_time_limit')) {
+            @set_time_limit(120);
         }
-    }
+        $versionTag = bds_generate_version_tag();
+        bds_store_app_version($config, $root, $versionTag, $admin['id'] ?? null, $note);
+        $results = preload_cache_targets($versionTag, $root);
+        $successCount = 0;
+        foreach ($results as $result) {
+            if (!empty($result['ok'])) {
+                $successCount++;
+            }
+        }
 
-    $pdo = bds_try_pdo($config);
-    if ($pdo) {
-        audit_log($pdo, $admin, 'refresh_cache', $versionTag, 'success', [
-            'preloaded' => count($results),
-            'success' => $successCount,
+        $pdo = bds_try_pdo($config);
+        if ($pdo) {
+            audit_log($pdo, $admin, 'refresh_cache', $versionTag, 'success', [
+                'preloaded' => count($results),
+                'success' => $successCount,
+                'note' => $note,
+            ]);
+        }
+
+        respond([
+            'ok' => true,
+            'version_tag' => $versionTag,
             'note' => $note,
+            'results' => $results,
+            'summary' => [
+                'total' => count($results),
+                'success' => $successCount,
+                'failed' => count($results) - $successCount,
+            ],
         ]);
-    }
+    } catch (Throwable $e) {
+        $pdo = bds_try_pdo($config);
+        if ($pdo) {
+            audit_log($pdo, $admin, 'refresh_cache', null, 'fail', [
+                'note' => $note,
+                'reason' => $e->getMessage(),
+            ]);
+        }
 
-    respond([
-        'ok' => true,
-        'version_tag' => $versionTag,
-        'note' => $note,
-        'results' => $results,
-        'summary' => [
-            'total' => count($results),
-            'success' => $successCount,
-            'failed' => count($results) - $successCount,
-        ],
-    ]);
+        respond([
+            'ok' => false,
+            'error' => 'Không thể xóa cache và preload: ' . $e->getMessage(),
+        ], 500);
+    }
 }
 
 $resource = (string)($_GET['resource'] ?? '');

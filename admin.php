@@ -685,8 +685,23 @@ function apiUrl(params) {
   return API_BASE + '?' + new URLSearchParams(params).toString();
 }
 
+function parseApiJsonResponse(r) {
+  return r.text().then(function(text) {
+    var body = (text || '').trim();
+    if (!body) {
+      throw new Error('API trả về rỗng từ server (' + r.status + '). Có thể request bị timeout hoặc PHP bị lỗi giữa chừng.');
+    }
+    try {
+      return JSON.parse(body);
+    } catch (e) {
+      var preview = body.replace(/\s+/g, ' ').slice(0, 180);
+      throw new Error('API trả về dữ liệu không phải JSON (' + r.status + '): ' + preview);
+    }
+  });
+}
+
 function handleApiResponse(r) {
-  return r.json().then(function(data) {
+  return parseApiJsonResponse(r).then(function(data) {
     if (!r.ok || !data.ok) throw new Error(data.error || 'API error');
     return data;
   });
@@ -725,7 +740,7 @@ function apiAction(action, payload, options) {
   requestOptions.headers = { 'Content-Type': 'application/json' };
   requestOptions.body = JSON.stringify(payload || {});
   return fetch(apiUrl(query), requestOptions).then(function(r) {
-    return r.json().then(function(data) {
+    return parseApiJsonResponse(r).then(function(data) {
       if (r.status === 401 && options.retry !== false) {
         return apiLogin().then(function() {
           return apiAction(action, payload, Object.assign({}, options, { retry: false }));
@@ -748,7 +763,7 @@ function apiLogin() {
     credentials: 'same-origin',
     body: JSON.stringify({ username: username, password: password })
   }).then(function(r) {
-    return r.json().then(function(data) {
+    return parseApiJsonResponse(r).then(function(data) {
       if (!r.ok || !data.ok) throw new Error(data.error || 'Đăng nhập thất bại');
       showToast('Đã đăng nhập admin', 'success');
       return data;
@@ -763,7 +778,7 @@ function apiSave(resource, data, retry) {
     credentials: 'same-origin',
     body: JSON.stringify({ data: data })
   }).then(function(r) {
-    return r.json().then(function(result) {
+    return parseApiJsonResponse(r).then(function(result) {
       if (r.status === 401 && retry !== false) {
         return apiLogin().then(function() { return apiSave(resource, data, false); });
       }
@@ -795,7 +810,7 @@ function formatSize(bytes) {
 function apiListFiles(path, retry) {
   return fetch(apiUrl({ action: 'list-files', path: path || '' }), { cache: 'no-store', credentials: 'same-origin' })
     .then(function(r) {
-      return r.json().then(function(data) {
+      return parseApiJsonResponse(r).then(function(data) {
         if (r.status === 401 && retry !== false) {
           return apiLogin().then(function() { return apiListFiles(path, false); });
         }
