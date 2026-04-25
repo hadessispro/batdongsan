@@ -680,6 +680,8 @@ var currentJsonResource = '';
 var currentHotspotData = null;
 var currentMasterplanData = {};
 var currentThamQuanConfig = { panoSrc: '', hotspots: [], texts: [] };
+var CACHE_REFRESH_POLL_TIMER = null;
+var CACHE_REFRESH_LAST_STATE = '';
 
 function apiUrl(params) {
   return API_BASE + '?' + new URLSearchParams(params).toString();
@@ -719,6 +721,11 @@ function apiFetch(resource) {
 
 function apiStatus() {
   return fetch(apiUrl({ action: 'status' }), { cache: 'no-store', credentials: 'same-origin' })
+    .then(handleApiResponse);
+}
+
+function apiCacheRefreshStatus() {
+  return fetch(apiUrl({ action: 'cache-refresh-status' }), { cache: 'no-store', credentials: 'same-origin' })
     .then(handleApiResponse);
 }
 
@@ -1077,6 +1084,8 @@ function renderCacheResults(data) {
   var box = document.getElementById('cache-refresh-results');
   if (!box) return;
   var results = (data && data.results) || [];
+  var state = (data && data.state) || '';
+  var message = (data && data.message) || '';
   if (!results.length) {
     if (data && data.preload_mode === 'background') {
       var pending = String((data.summary && data.summary.pending) || (data.summary && data.summary.total) || 0);
@@ -1101,7 +1110,24 @@ function renderCacheResults(data) {
     return;
   }
 
-  var html = '<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">Version mới: <b style="color:var(--text)">' + escapeHtml(data.version_tag || '—') + '</b> | Thành công: <b style="color:var(--green)">' + escapeHtml(String((data.summary && data.summary.success) || 0)) + '</b> / ' + escapeHtml(String((data.summary && data.summary.total) || results.length)) + '</div>';
+  var stateText = state === 'completed'
+    ? 'Đã hoàn tất'
+    : state === 'completed_with_errors'
+      ? 'Hoàn tất nhưng còn lỗi'
+      : state === 'failed'
+        ? 'Đã lỗi'
+        : 'Đã xong';
+  var stateColor = state === 'completed'
+    ? 'var(--green)'
+    : state === 'completed_with_errors'
+      ? 'var(--gold)'
+      : state === 'failed'
+        ? 'var(--red)'
+        : 'var(--text)';
+  var html = '<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">Version mới: <b style="color:var(--text)">' + escapeHtml(data.version_tag || '—') + '</b> | Trạng thái: <b style="color:' + stateColor + '">' + escapeHtml(stateText) + '</b> | Thành công: <b style="color:var(--green)">' + escapeHtml(String((data.summary && data.summary.success) || 0)) + '</b> / ' + escapeHtml(String((data.summary && data.summary.total) || results.length)) + '</div>';
+  if (message) {
+    html += '<div style="margin-bottom:12px;font-size:12px;color:var(--text2)">' + escapeHtml(message) + '</div>';
+  }
   html += '<div style="overflow:auto"><table class="data-table"><thead><tr><th>URL preload</th><th>HTTP</th><th>Thời gian</th><th>Kết quả</th></tr></thead><tbody>';
   results.forEach(function(item) {
     html += '<tr>' +
@@ -1113,6 +1139,79 @@ function renderCacheResults(data) {
   });
   html += '</tbody></table></div>';
   box.innerHTML = html;
+}
+
+function stopCacheRefreshPolling() {
+  if (CACHE_REFRESH_POLL_TIMER) {
+    clearTimeout(CACHE_REFRESH_POLL_TIMER);
+    CACHE_REFRESH_POLL_TIMER = null;
+  }
+}
+
+function scheduleCacheRefreshPolling(delayMs) {
+  stopCacheRefreshPolling();
+  CACHE_REFRESH_POLL_TIMER = setTimeout(pollCacheRefreshStatus, delayMs || 3000);
+}
+
+function applyCacheRefreshStatus(data, options) {
+  options = options || {};
+  var status = document.getElementById('cache-refresh-status');
+  var state = (data && data.state) || 'idle';
+  var summary = (data && data.summary) || {};
+  renderCacheResults(data || {});
+
+  if (!status) return;
+
+  if (state === 'running') {
+    status.textContent = 'Hosting đang preload nền ' + String(summary.pending || summary.total || 0) + ' URL. Bạn có thể chờ vài giây, admin sẽ tự cập nhật trạng thái.';
+    return;
+  }
+
+  if (state === 'completed') {
+    status.textContent = 'Preload đã hoàn tất. Thành công ' + String(summary.success || 0) + '/' + String(summary.total || 0) + ' URL.';
+    if (!options.silent && CACHE_REFRESH_LAST_STATE === 'running') {
+      showToast('Preload cache đã hoàn tất', 'success');
+    }
+    return;
+  }
+
+  if (state === 'completed_with_errors') {
+    status.textContent = 'Preload đã chạy xong nhưng còn lỗi ở ' + String(summary.failed || 0) + ' URL.';
+    if (!options.silent && CACHE_REFRESH_LAST_STATE === 'running') {
+      showToast('Preload cache đã xong nhưng còn một số URL lỗi', 'error');
+    }
+    return;
+  }
+
+  if (state === 'failed') {
+    status.textContent = (data && data.error) ? String(data.error) : 'Preload nền đã lỗi giữa chừng.';
+    if (!options.silent && CACHE_REFRESH_LAST_STATE === 'running') {
+      showToast(status.textContent, 'error');
+    }
+    return;
+  }
+
+  status.textContent = 'Chưa chạy lần nào trong phiên này.';
+}
+
+function pollCacheRefreshStatus() {
+  apiCacheRefreshStatus().then(function(data) {
+    var state = (data && data.state) || 'idle';
+    applyCacheRefreshStatus(data);
+    if (state === 'running') {
+      CACHE_REFRESH_LAST_STATE = 'running';
+      scheduleCacheRefreshPolling(3000);
+      return;
+    }
+    CACHE_REFRESH_LAST_STATE = state;
+    stopCacheRefreshPolling();
+  }).catch(function(e) {
+    var status = document.getElementById('cache-refresh-status');
+    if (status) {
+      status.textContent = e.message || 'Không đọc được trạng thái preload nền';
+    }
+    scheduleCacheRefreshPolling(5000);
+  });
 }
 
 function loadAdminUsers() {
@@ -1136,6 +1235,18 @@ function loadSettingsPage(force) {
     CURRENT_ADMIN = status.user || CURRENT_ADMIN;
     SETTINGS_LOADED = true;
     renderSettingsSummary();
+    apiCacheRefreshStatus().then(function(cacheStatus) {
+      applyCacheRefreshStatus(cacheStatus, { silent: true });
+      if ((cacheStatus && cacheStatus.state) === 'running') {
+        CACHE_REFRESH_LAST_STATE = 'running';
+        scheduleCacheRefreshPolling(3000);
+      } else {
+        CACHE_REFRESH_LAST_STATE = (cacheStatus && cacheStatus.state) || '';
+        stopCacheRefreshPolling();
+      }
+    }).catch(function() {
+      // Ignore cache status bootstrap failures here to avoid blocking settings load.
+    });
 
     if (legacyHint) {
       if (!status.dbConnected) {
@@ -1253,15 +1364,19 @@ function refreshSiteCache() {
   var button = document.getElementById('btn-refresh-cache');
   var status = document.getElementById('cache-refresh-status');
   var note = document.getElementById('cache-refresh-note').value.trim();
+  stopCacheRefreshPolling();
+  CACHE_REFRESH_LAST_STATE = 'running';
   button.disabled = true;
   status.textContent = 'Đang publish version mới của website...';
 
   apiAction('refresh-app-cache', { note: note }).then(function(data) {
-    renderCacheResults(data);
     if (data.preload_mode === 'background') {
-      status.textContent = 'Đã tạo version ' + (data.version_tag || '—') + '. Hosting đang preload nền, không chờ request admin chạy xong nữa.';
+      applyCacheRefreshStatus(data, { silent: true });
+      status.textContent = 'Đã tạo version ' + (data.version_tag || '—') + '. Hosting đang preload nền, admin sẽ tự cập nhật khi hoàn tất.';
       showToast('Đã publish version mới và chuyển preload sang chạy nền', 'success');
+      scheduleCacheRefreshPolling(3000);
     } else {
+      renderCacheResults(data);
       status.textContent = 'Đã xong. Version hiện tại: ' + (data.version_tag || '—');
       showToast('Đã xóa cache và preload website', 'success');
     }

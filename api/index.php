@@ -89,6 +89,51 @@ function respond_and_finish_request(array $payload, int $status = 200): void
     @flush();
 }
 
+function cache_refresh_status_path(string $root): string
+{
+    return $root . '/data/cache_refresh_status.json';
+}
+
+function read_cache_refresh_status(string $root): ?array
+{
+    $path = cache_refresh_status_path($root);
+    if (!is_file($path)) {
+        return null;
+    }
+
+    $raw = @file_get_contents($path);
+    if ($raw === false || trim($raw) === '') {
+        return null;
+    }
+
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : null;
+}
+
+function write_cache_refresh_status(string $root, array $status): void
+{
+    $path = cache_refresh_status_path($root);
+    $dir = dirname($path);
+    if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+        throw new RuntimeException('Không thể tạo thư mục lưu trạng thái cache refresh');
+    }
+
+    $encoded = json_encode($status, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($encoded === false) {
+        throw new RuntimeException('Không thể mã hóa trạng thái cache refresh');
+    }
+
+    $tmpPath = $path . '.tmp';
+    if (file_put_contents($tmpPath, $encoded . PHP_EOL, LOCK_EX) === false) {
+        throw new RuntimeException('Không thể ghi file trạng thái cache refresh');
+    }
+
+    if (!rename($tmpPath, $path)) {
+        @unlink($tmpPath);
+        throw new RuntimeException('Không thể cập nhật file trạng thái cache refresh');
+    }
+}
+
 function read_json_body(): array
 {
     $raw = file_get_contents('php://input');
@@ -1232,6 +1277,34 @@ if ($action === 'reset-user-password') {
     ]);
 }
 
+if ($action === 'cache-refresh-status') {
+    if ($method !== 'GET') {
+        respond(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+
+    require_admin();
+    $status = read_cache_refresh_status($root);
+    if ($status === null) {
+        respond([
+            'ok' => true,
+            'exists' => false,
+            'state' => 'idle',
+            'results' => [],
+            'summary' => [
+                'total' => 0,
+                'success' => 0,
+                'failed' => 0,
+                'pending' => 0,
+            ],
+        ]);
+    }
+
+    respond(array_merge([
+        'ok' => true,
+        'exists' => true,
+    ], $status));
+}
+
 if ($action === 'refresh-app-cache') {
     if ($method !== 'POST') {
         respond(['ok' => false, 'error' => 'Method not allowed'], 405);
@@ -1245,16 +1318,18 @@ if ($action === 'refresh-app-cache') {
         if (function_exists('set_time_limit')) {
             @set_time_limit(120);
         }
+        $startedAt = date(DATE_ATOM);
         $versionTag = bds_generate_version_tag();
         bds_store_app_version($config, $root, $versionTag, $admin['id'] ?? null, $note);
         $targets = build_preload_targets($versionTag, $root);
 
-        respond_and_finish_request([
-            'ok' => true,
+        $runningStatus = [
+            'state' => 'running',
             'version_tag' => $versionTag,
             'note' => $note,
-            'preload_mode' => 'background',
-            'message' => 'Version mới đã được publish. Hosting sẽ tiếp tục preload nền các URL quan trọng sau khi phản hồi admin.',
+            'started_at' => $startedAt,
+            'finished_at' => null,
+            'message' => 'Version mới đã được publish. Hosting đang preload nền các URL quan trọng.',
             'results' => [],
             'targets_preview' => array_slice($targets, 0, 8),
             'summary' => [
@@ -1263,7 +1338,13 @@ if ($action === 'refresh-app-cache') {
                 'failed' => 0,
                 'pending' => count($targets),
             ],
-        ]);
+        ];
+        write_cache_refresh_status($root, $runningStatus);
+
+        respond_and_finish_request(array_merge([
+            'ok' => true,
+            'preload_mode' => 'background',
+        ], $runningStatus));
 
         try {
             $results = [];
@@ -1271,6 +1352,25 @@ if ($action === 'refresh-app-cache') {
                 $results[] = preload_url($target);
             }
             $summary = summarize_preload_results($results);
+            $completedStatus = [
+                'state' => $summary['failed'] > 0 ? 'completed_with_errors' : 'completed',
+                'version_tag' => $versionTag,
+                'note' => $note,
+                'started_at' => $startedAt,
+                'finished_at' => date(DATE_ATOM),
+                'message' => $summary['failed'] > 0
+                    ? 'Preload đã chạy xong nhưng vẫn còn một số URL lỗi.'
+                    : 'Preload đã hoàn tất thành công.',
+                'results' => $results,
+                'targets_preview' => array_slice($targets, 0, 8),
+                'summary' => [
+                    'total' => $summary['total'],
+                    'success' => $summary['success'],
+                    'failed' => $summary['failed'],
+                    'pending' => 0,
+                ],
+            ];
+            write_cache_refresh_status($root, $completedStatus);
             $pdo = bds_try_pdo($config);
             if ($pdo) {
                 audit_log($pdo, $admin, 'refresh_cache', $versionTag, 'success', [
@@ -1281,6 +1381,24 @@ if ($action === 'refresh-app-cache') {
                 ]);
             }
         } catch (Throwable $backgroundError) {
+            $partialSummary = summarize_preload_results($results ?? []);
+            write_cache_refresh_status($root, [
+                'state' => 'failed',
+                'version_tag' => $versionTag,
+                'note' => $note,
+                'started_at' => $startedAt,
+                'finished_at' => date(DATE_ATOM),
+                'message' => 'Preload nền đã lỗi giữa chừng.',
+                'error' => $backgroundError->getMessage(),
+                'results' => $results ?? [],
+                'targets_preview' => array_slice($targets, 0, 8),
+                'summary' => [
+                    'total' => count($targets),
+                    'success' => $partialSummary['success'],
+                    'failed' => max(1, $partialSummary['failed']),
+                    'pending' => max(0, count($targets) - count($results ?? [])),
+                ],
+            ]);
             $pdo = bds_try_pdo($config);
             if ($pdo) {
                 audit_log($pdo, $admin, 'refresh_cache', $versionTag, 'fail', [
