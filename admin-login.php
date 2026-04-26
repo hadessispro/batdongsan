@@ -344,7 +344,7 @@ body{
           </div>
 
           <div class="row">
-            <div class="hint">Khuyên dùng tài khoản riêng và mật khẩu mạnh, không dùng mặc định.</div>
+            <div class="hint">Khuyên dùng tài khoản riêng và mật khẩu mạnh, không dùng mặc định. Nhập sai quá 5 lần sẽ bị khóa trong 72 giờ.</div>
           </div>
 
           <button class="btn" id="login-btn" type="submit">Đăng nhập vào admin</button>
@@ -375,8 +375,30 @@ body{
       return API_BASE + '?' + new URLSearchParams(params).toString();
     }
 
+    function parseApiJsonResponse(res) {
+      return res.text().then(function (text) {
+        var body = (text || '').trim();
+        if (!body) {
+          throw new Error('Máy chủ không trả về dữ liệu. Có thể hosting đang bận hoặc request bị ngắt giữa chừng.');
+        }
+        try {
+          return JSON.parse(body);
+        } catch (e) {
+          throw new Error('Máy chủ trả về dữ liệu lỗi. Vui lòng thử lại sau ít phút hoặc liên hệ quản trị viên.');
+        }
+      });
+    }
+
+    function friendlyLoginError(message) {
+      var text = String(message || 'Không thể đăng nhập.');
+      if (/SQLSTATE\[|HY093|Invalid parameter number|PDO|Stack trace|Call to/i.test(text)) {
+        return 'Hệ thống đăng nhập đang gặp lỗi kỹ thuật. Vui lòng thử lại sau ít phút hoặc liên hệ quản trị viên.';
+      }
+      return text;
+    }
+
     function showError(message) {
-      errorBox.textContent = message;
+      errorBox.textContent = friendlyLoginError(message);
       errorBox.classList.add('show');
       successBox.classList.remove('show');
     }
@@ -396,7 +418,7 @@ body{
       cache: 'no-store',
       credentials: 'same-origin'
     }).then(function (res) {
-      return res.json();
+      return parseApiJsonResponse(res);
     }).then(function (data) {
       loading.textContent = '';
       if (data && data.authenticated) {
@@ -423,7 +445,7 @@ body{
         credentials: 'same-origin',
         body: JSON.stringify(payload)
       }).then(function (res) {
-        return res.json().then(function (data) {
+        return parseApiJsonResponse(res).then(function (data) {
           if (!res.ok || !data.ok) {
             throw new Error(data.error || 'Đăng nhập thất bại');
           }

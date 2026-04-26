@@ -497,8 +497,15 @@ function db_user_session_payload(array $row): array
 
 function fetch_admin_user_by_login(PDO $pdo, string $login): ?array
 {
-    $stmt = $pdo->prepare('SELECT * FROM admin_users WHERE username = :login OR email = :login LIMIT 1');
-    $stmt->execute([':login' => $login]);
+    $stmt = $pdo->prepare(
+        'SELECT * FROM admin_users
+         WHERE username = :login_username OR email = :login_email
+         LIMIT 1'
+    );
+    $stmt->execute([
+        ':login_username' => $login,
+        ':login_email' => $login,
+    ]);
     $row = $stmt->fetch();
     return is_array($row) ? $row : null;
 }
@@ -565,15 +572,49 @@ function generate_temp_password(int $length = 14): string
 
 function login_lockout_message(?string $lockedUntil = null): string
 {
-    $base = 'Tài khoản đang bị khóa do nhập sai mật khẩu quá ' . BDS_LOGIN_MAX_FAILED_ATTEMPTS . ' lần.';
+    $base = 'Tài khoản đã bị khóa tạm thời vì nhập sai mật khẩu quá ' . BDS_LOGIN_MAX_FAILED_ATTEMPTS . ' lần.';
     if ($lockedUntil) {
         $timestamp = strtotime($lockedUntil);
         if ($timestamp !== false) {
-            return $base . ' Vui lòng thử lại sau ' . date('H:i d/m/Y', $timestamp) . ' hoặc liên hệ quản trị viên để reset mật khẩu.';
+            return $base . ' Hệ thống sẽ mở lại lúc ' . date('H:i d/m/Y', $timestamp) . '. Bạn cũng có thể liên hệ quản trị viên để reset mật khẩu sớm hơn.';
         }
     }
 
     return $base . ' Thời gian khóa là 72 giờ hoặc cho tới khi quản trị viên reset mật khẩu.';
+}
+
+function login_failed_attempt_message(int $failedAttempts): string
+{
+    $remaining = max(0, BDS_LOGIN_MAX_FAILED_ATTEMPTS - $failedAttempts);
+    if ($remaining <= 0) {
+        return login_lockout_message();
+    }
+
+    return 'Sai tài khoản hoặc mật khẩu. Bạn còn ' . $remaining . ' lần thử trước khi tài khoản bị khóa trong 72 giờ.';
+}
+
+function normalize_login_error_message(string $message): string
+{
+    $message = trim($message);
+    if ($message === '') {
+        return 'Không thể đăng nhập. Vui lòng thử lại sau ít phút.';
+    }
+
+    $technicalPatterns = [
+        'SQLSTATE[',
+        'Invalid parameter number',
+        'HY093',
+        'PDOException',
+        'Call to',
+        'Stack trace',
+    ];
+    foreach ($technicalPatterns as $pattern) {
+        if (stripos($message, $pattern) !== false) {
+            return 'Hệ thống đăng nhập đang gặp lỗi kỹ thuật. Vui lòng thử lại sau ít phút hoặc liên hệ quản trị viên.';
+        }
+    }
+
+    return $message;
 }
 
 function public_base_url(): string
@@ -823,7 +864,7 @@ function handle_database_login(PDO $pdo, string $login, string $password): array
     }
 
     if ((int)$row['is_active'] !== 1) {
-        throw new RuntimeException('Tài khoản đã bị khóa');
+        throw new RuntimeException('Tài khoản này hiện đang bị tắt. Vui lòng liên hệ quản trị viên.');
     }
 
     if (!empty($row['locked_until']) && strtotime((string)$row['locked_until']) > time()) {
@@ -847,7 +888,7 @@ function handle_database_login(PDO $pdo, string $login, string $password): array
             throw new RuntimeException(login_lockout_message($lockedUntil));
         }
 
-        throw new RuntimeException('Sai tài khoản hoặc mật khẩu');
+        throw new RuntimeException(login_failed_attempt_message($failedAttempts));
     }
 
     $stmt = $pdo->prepare(
@@ -907,11 +948,11 @@ if ($action === 'login') {
             audit_log($pdo, $admin, 'login', $admin['username'], 'success', ['source' => 'database']);
             respond(['ok' => true, 'authenticated' => true, 'user' => $admin, 'source' => 'database']);
         } catch (Throwable $e) {
-            $dbError = $e->getMessage();
+            $dbError = normalize_login_error_message($e->getMessage());
             audit_log($pdo, null, 'login', $login, 'fail', ['source' => 'database', 'reason' => $dbError], $login);
         }
     } elseif (bds_has_database_config($config)) {
-        $dbError = 'Database chưa kết nối được. Tạm thời có thể dùng tài khoản legacy nếu đang còn hiệu lực.';
+        $dbError = 'Hệ thống đăng nhập chưa kết nối được database. Nếu bạn còn tài khoản legacy dự phòng thì có thể dùng tạm, nếu không hãy liên hệ quản trị viên.';
     }
 
     if (hash_equals((string)$config['username'], $login) && hash_equals((string)$config['password'], $password)) {
