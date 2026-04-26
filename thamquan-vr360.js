@@ -153,12 +153,19 @@
   }
 
   function loadThamQuanConfig() {
-    return fetch("data/thamquan_config.json?t=" + Date.now(), { cache: "no-store" })
+    return fetch("./api/index.php?resource=thamquan-config&t=" + Date.now(), {
+      cache: "no-store",
+      credentials: "same-origin",
+    })
       .then(function (res) {
         if (!res.ok) throw new Error("Không tải được tham quan config");
         return res.json();
       })
-      .then(function (data) {
+      .then(function (payload) {
+        if (!payload || !payload.ok || !payload.data) {
+          throw new Error("Không tải được tham quan config");
+        }
+        var data = payload.data;
         applyThamQuanConfig(data);
       })
       .catch(function () {

@@ -4157,7 +4157,7 @@ loadAll();
     const grid = document.querySelector(".vid-grid");
     if (!grid) return;
     if (!LIBRARY_VIDEOS.length) {
-      grid.innerHTML = '<div class="vid-empty">Chưa có video. Thêm video trong Admin / JSON Editor / data/library.json.</div>';
+    grid.innerHTML = '<div class="vid-empty">Chưa có video. Thêm video trong Admin / JSON Editor.</div>';
       return;
     }
     grid.innerHTML = LIBRARY_VIDEOS.map((video) => {
@@ -4179,12 +4179,19 @@ loadAll();
   }
 
   function loadLibraryData() {
-    fetch("./data/library.json?t=" + Date.now(), { cache: "no-store" })
+    fetch("./api/index.php?resource=library&t=" + Date.now(), {
+      cache: "no-store",
+      credentials: "same-origin",
+    })
       .then((r) => {
-        if (!r.ok) throw new Error("Không tải được library.json");
+        if (!r.ok) throw new Error("Không tải được du lieu thu vien");
         return r.json();
       })
-      .then((data) => {
+      .then((payload) => {
+        if (!payload || !payload.ok || !payload.data) {
+          throw new Error("Khong doc duoc du lieu thu vien");
+        }
+        const data = payload.data;
         if (Array.isArray(data.albums)) {
           ALBUMS = data.albums.map((album) => ({
             title: album.title || "Album",

@@ -2225,7 +2225,7 @@
           if (!card) return;
           var src = card.getAttribute("data-video");
           if (!src) {
-            alert("Video chưa có file. Hãy thêm src trong Admin / data/library.json.");
+              alert("Video chưa có file. Hãy thêm src trong Admin.");
             return;
           }
           player.querySelector("source").src = src;

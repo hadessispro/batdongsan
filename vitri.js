@@ -78,12 +78,19 @@
       cb && cb();
       return;
     }
-    fetch("./data/vitri_config.json?t=" + Date.now(), { cache: "no-store" })
+    fetch("./api/index.php?resource=vitri-config&t=" + Date.now(), {
+      cache: "no-store",
+      credentials: "same-origin",
+    })
       .then(function (r) {
         if (!r.ok) throw new Error("No vitri config");
         return r.json();
       })
-      .then(function (data) {
+      .then(function (payload) {
+        if (!payload || !payload.ok || !payload.data) {
+          throw new Error("No vitri config");
+        }
+        var data = payload.data;
         applyVitriConfig(data);
         vitriConfigLoaded = true;
         cb && cb();

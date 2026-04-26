@@ -751,6 +751,11 @@ function safe_resource_path(string $resource, array $resources): string
     return $resources[$resource];
 }
 
+function is_public_resource(string $resource): bool
+{
+    return in_array($resource, ['library', 'vitri-config', 'thamquan-config'], true);
+}
+
 function load_json_file(string $path): array
 {
     if (!is_file($path)) {
@@ -1370,9 +1375,9 @@ function build_preload_targets(string $versionTag, string $root): array
         public_url('matbang.js', ['v' => $versionTag]),
         public_url('vitri.js', ['v' => $versionTag]),
         public_url('favicon.webp', ['v' => $versionTag]),
-        public_url('data/library.json', ['t' => $versionTag]),
-        public_url('data/vitri_config.json', ['t' => $versionTag]),
-        public_url('data/thamquan_config.json', ['t' => $versionTag]),
+        public_url('api/index.php', ['resource' => 'library', 't' => $versionTag]),
+        public_url('api/index.php', ['resource' => 'vitri-config', 't' => $versionTag]),
+        public_url('api/index.php', ['resource' => 'thamquan-config', 't' => $versionTag]),
     ];
 
     $targets = array_merge($targets, preload_collect_media_targets($root, $versionTag));
@@ -2080,7 +2085,10 @@ if ($resource === '') {
 $path = safe_resource_path($resource, $resources);
 
 if ($method === 'GET') {
-    $admin = require_admin();
+    $admin = current_admin();
+    if (!is_public_resource($resource)) {
+        $admin = require_admin();
+    }
     respond([
         'ok' => true,
         'resource' => $resource,
