@@ -9,6 +9,7 @@ Options -Indexes
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 
   RewriteRule ^data/backups/ - [F,L,NC]
+  RewriteRule ^data/(masterplan|buildings|vr_config|api_rate_limits|cache_refresh_status|login_ip_guard|legacy_login_guard)\.json$ - [F,L,NC]
   RewriteRule ^api/config\.local\.php$ - [F,L,NC]
 
   RewriteCond %{THE_REQUEST} \s/+admin-login\.php[\s?] [NC]

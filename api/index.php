@@ -1373,8 +1373,6 @@ function build_preload_targets(string $versionTag, string $root): array
         public_url('data/library.json', ['t' => $versionTag]),
         public_url('data/vitri_config.json', ['t' => $versionTag]),
         public_url('data/thamquan_config.json', ['t' => $versionTag]),
-        public_url('data/vr_config.json', ['t' => $versionTag]),
-        public_url('data/masterplan.json', ['t' => $versionTag]),
     ];
 
     $targets = array_merge($targets, preload_collect_media_targets($root, $versionTag));
@@ -2082,11 +2080,12 @@ if ($resource === '') {
 $path = safe_resource_path($resource, $resources);
 
 if ($method === 'GET') {
+    $admin = require_admin();
     respond([
         'ok' => true,
         'resource' => $resource,
         'data' => load_json_file($path),
-        'authenticated' => current_admin() !== null,
+        'authenticated' => $admin !== null,
     ]);
 }
 
