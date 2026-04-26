@@ -344,7 +344,7 @@ body{
           </div>
 
           <div class="row">
-            <div class="hint">Khuyên dùng tài khoản riêng và mật khẩu mạnh, không dùng mặc định. Nhập sai 5 lần liên tiếp sẽ bị khóa trong 72 giờ theo tài khoản và cả theo IP mạng hiện tại; đăng nhập đúng sẽ đặt lại bộ đếm.</div>
+            <div class="hint">Khuyên dùng tài khoản riêng và mật khẩu mạnh, không dùng mặc định.</div>
           </div>
 
           <button class="btn" id="login-btn" type="submit">Đăng nhập vào admin</button>

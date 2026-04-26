@@ -3091,46 +3091,6 @@ body {
   overflow: hidden;
 }
 
-.mp-dev-toggle {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  background: rgba(1, 67, 74, 0.85);
-  backdrop-filter: blur(10px);
-  padding: 10px 15px;
-  border-radius: 30px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #fff;
-  font-family: "Be Vietnam Pro", sans-serif;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  border: 1.5px solid rgba(246, 228, 147, 0.3);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-}
-
-.mp-export-btn {
-  position: absolute;
-  top: 75px;
-  right: 20px;
-  z-index: 1000;
-  background: linear-gradient(135deg, #a48135, #c4a155);
-  color: #fff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 30px;
-  font-family: "Be Vietnam Pro", sans-serif;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-  transition: all 0.3s ease;
-}
-
 .tienich-img-container {
   position: relative;
   width: 100%;
@@ -3245,12 +3205,6 @@ body {
 .dot-wrapper:hover .dot-label {
   opacity: 1;
   top: 48px;
-}
-
-/* Editor States */
-.edit-mode .dot-wrapper,
-.edit-mode .flag-hotspot {
-  cursor: grab !important;
 }
 
 .dragging {

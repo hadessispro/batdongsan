@@ -848,12 +848,11 @@ loadAll();
 
   window.initOverviewMasterPlan = function () {
     const container = document.getElementById("tienich-alldot");
-    const exportBtn = document.getElementById("masterplan-export-btn");
-    const devToggle = document.getElementById("mp-dev-checkbox");
     if (!container) return;
 
     // Clear existing
     container.innerHTML = "";
+    container.classList.remove("edit-mode");
 
     // Generate hotspots
     Object.keys(OVERVIEW_DATA).forEach((name) => {
@@ -879,66 +878,11 @@ loadAll();
       // Click to navigate to VR (chỉ dành cho dots)
       if (config.type !== "flag") {
         el.addEventListener("click", () => {
-          if (container.classList.contains("edit-mode")) return;
           if (window.openVRByName) window.openVRByName(name);
         });
       }
 
-      // Drag logic
-      let isDragging = false;
-      el.addEventListener("mousedown", (e) => {
-        if (!container.classList.contains("edit-mode")) return;
-        isDragging = true;
-        el.classList.add("dragging");
-        e.preventDefault();
-      });
-
-      window.addEventListener("mousemove", (e) => {
-        if (!isDragging) return;
-        const rect = container.getBoundingClientRect();
-        let x = e.clientX - rect.left;
-        let y = e.clientY - rect.top;
-
-        let leftPct = (x / rect.width) * 100;
-        let topPct = (y / rect.height) * 100;
-
-        leftPct = Math.max(0, Math.min(100, leftPct));
-        topPct = Math.max(0, Math.min(100, topPct));
-
-        el.style.left = leftPct.toFixed(2) + "%";
-        el.style.top = topPct.toFixed(2) + "%";
-
-        OVERVIEW_DATA[name].left = parseFloat(leftPct.toFixed(2));
-        OVERVIEW_DATA[name].top = parseFloat(topPct.toFixed(2));
-      });
-
-      window.addEventListener("mouseup", () => {
-        if (isDragging) {
-          isDragging = false;
-          el.classList.remove("dragging");
-        }
-      });
-
       container.appendChild(el);
-    });
-
-    // Toggle Edit Mode
-    devToggle.addEventListener("change", function () {
-      if (this.checked) {
-        container.classList.add("edit-mode");
-        exportBtn.style.display = "block";
-      } else {
-        container.classList.remove("edit-mode");
-        exportBtn.style.display = "none";
-      }
-    });
-
-    // Export JSON
-    exportBtn.addEventListener("click", () => {
-      const json = JSON.stringify(OVERVIEW_DATA, null, 2);
-      navigator.clipboard.writeText(json);
-      alert("Đã copy JSON Master Plan vào clipboard!");
-      console.log("MASTER PLAN DATA:", json);
     });
   };
 
@@ -2214,10 +2158,7 @@ loadAll();
 
 // ═══════════════════════════════════════════════════════════
 //  VR MINIMAP — Production Mode
-//  Dev Mode đã tắt. Bật lại: uncomment phần cuối file.
 // ═══════════════════════════════════════════════════════════
-
-// Thay thế toàn bộ (function initMinimap(){...})(); trong main.js
 
 (function initMinimap() {
   var card = document.getElementById("vr-minimap-card");
@@ -2290,76 +2231,6 @@ loadAll();
     }
   };
 
-  // ═══════════════════════════════════════════════════════════
-  //  ★ DEV MODE — Đã tắt. Bật lại: uncomment block bên dưới.
-  //
-  //  Cách dùng:
-  //  1. Mở VR tiện ích bất kỳ
-  //  2. Bấm M → bật Dev Mode
-  //  3. Click vào minimap để đặt vị trí dot
-  //  4. Chuyển tiện ích khác → lặp lại
-  //  5. Bấm E → export JSON PANO_POSITIONS
-  //  6. Paste vào code thay biến PANO_POSITIONS
-  //  7. Bấm M → tắt Dev Mode
-  // ═══════════════════════════════════════════════════════════
-
-  /*
-  var devMode = false;
-  var devEl = null;
-  var imgWrap = document.getElementById("vr-minimap-img-wrap");
-
-  function createDevUI() {
-    if (devEl) return;
-    devEl = document.createElement("div");
-    devEl.style.cssText =
-      "position:fixed;top:10px;left:10px;z-index:9999;background:rgba(0,0,0,0.85);" +
-      "color:#fff;font:12px monospace;padding:10px 16px;border-radius:8px;" +
-      "pointer-events:none;border:1px solid #f6c842;max-width:350px;line-height:1.6;";
-    devEl.innerHTML = "<b>MINIMAP DEV MODE</b><br>Click minimap để đặt vị trí<br>M = toggle | E = export";
-    document.body.appendChild(devEl);
-  }
-
-  function toggleDevMode() {
-    devMode = !devMode;
-    if (devMode) {
-      createDevUI();
-      devEl.style.display = "";
-      if (!isOpen) { isOpen = true; card.classList.remove("minimap-hidden"); }
-    } else {
-      if (devEl) devEl.style.display = "none";
-    }
-  }
-
-  if (imgWrap) {
-    imgWrap.addEventListener("click", function (e) {
-      if (!devMode) return;
-      e.stopPropagation();
-      var rect = imgWrap.getBoundingClientRect();
-      var leftPct = parseFloat(((e.clientX - rect.left) / rect.width * 100).toFixed(1));
-      var topPct = parseFloat(((e.clientY - rect.top) / rect.height * 100).toFixed(1));
-      var panoKey = window._currentPanoKey;
-      if (!panoKey) return;
-      PANO_POSITIONS[panoKey] = { top: topPct, left: leftPct };
-      if (dot) { dot.style.top = topPct + "%"; dot.style.left = leftPct + "%"; }
-      if (pulse) { pulse.style.top = topPct + "%"; pulse.style.left = leftPct + "%"; }
-      if (devEl) {
-        devEl.innerHTML = "<b>DEV</b> | " + panoKey + " → top:" + topPct + "% left:" + leftPct + "%<br>M=toggle | E=export";
-      }
-    });
-  }
-
-  function exportPositions() {
-    var json = JSON.stringify(PANO_POSITIONS, null, 2);
-    try { navigator.clipboard.writeText(json); alert("Đã copy!"); } catch(ex) { prompt("Copy:", json); }
-  }
-
-  window.addEventListener("keydown", function (e) {
-    var vrModal = document.getElementById("vr-modal");
-    if (!vrModal || vrModal.style.display === "none") return;
-    if (e.key === "m" || e.key === "M") toggleDevMode();
-    if ((e.key === "e" || e.key === "E") && devMode) exportPositions();
-  });
-  */
 })();
 
 // ── Mobile Toggle cho ti-panel ──────────────────────────

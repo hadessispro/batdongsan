@@ -296,8 +296,6 @@
   var DRAG_SPEED = 0.15;
   var hsEls = [];
   var textMeshItems = [];
-  var debugMode = false,
-    debugEl = null;
   var textureApplied = false;
   var isZooming = false;
   var zoomTimeout = null;
@@ -576,19 +574,6 @@ textureApplied = false;
       updateHotspots();
       updateCompass();
 
-      if (debugMode && debugEl) {
-        debugEl.textContent =
-          "lon=" +
-          camLon.toFixed(1) +
-          " lat=" +
-          camLat.toFixed(1) +
-          " fov=" +
-          fov.toFixed(1) +
-          " tex=" +
-          (textureApplied ? "OK" : "...") +
-          " idle=" +
-          idleFrames;
-      }
     })();
   }
 
@@ -612,75 +597,6 @@ textureApplied = false;
     camera.updateProjectionMatrix();
     idleFrames = 0;
   }
-
-  // ═══ DEBUG ═══
-  window.addEventListener("keydown", function (e) {
-    if (overlay.style.display === "none") return;
-    if (e.key === "d" || e.key === "D") {
-      debugMode = !debugMode;
-      if (debugMode) {
-        if (!debugEl) {
-          debugEl = document.createElement("div");
-          debugEl.style.cssText =
-            "position:fixed;top:10px;left:10px;z-index:9999;background:rgba(0,0,0,.85);" +
-            "color:#0f0;font:13px monospace;padding:10px 16px;border-radius:8px;pointer-events:none";
-          document.body.appendChild(debugEl);
-        }
-        debugEl.style.display = "";
-      } else {
-        if (debugEl) debugEl.style.display = "none";
-      }
-    }
-    if (e.key === "e" || e.key === "E") {
-      var out = "var RAW_HOTSPOTS = [\n";
-      RAW_HOTSPOTS.forEach(function (h) {
-        out +=
-          "    { px: " +
-          h.px +
-          ", py: " +
-          h.py +
-          ', name: "' +
-          h.name +
-          '" },\n';
-      });
-      out += "];";
-      console.log(out);
-      try {
-        navigator.clipboard.writeText(out);
-      } catch (ex) {}
-    }
-  });
-
-  canvas.addEventListener("dblclick", function (e) {
-    if (!debugMode || !camera || !sphereMesh) return;
-    var rect = canvas.getBoundingClientRect();
-    var mx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-    var my = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-    var raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(mx, my), camera);
-    var hits = raycaster.intersectObject(sphereMesh);
-    if (hits.length > 0) {
-      var pt = hits[0].point;
-      var r = Math.sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
-      var phiHit = Math.acos(pt.y / r);
-      var thetaHit = Math.atan2(-pt.z, pt.x);
-      if (thetaHit < 0) thetaHit += 2 * Math.PI;
-      var imgX = Math.round((thetaHit / (2 * Math.PI)) * 2000);
-      var imgY = Math.round((phiHit / Math.PI) * 1000);
-      console.log("{ px: " + imgX + ", py: " + imgY + ', name: "" }');
-      var marker = document.createElement("div");
-      marker.style.cssText =
-        "position:fixed;z-index:9999;background:#0f0;color:#000;font:bold 12px monospace;" +
-        "padding:3px 10px;border-radius:12px;pointer-events:none;box-shadow:0 2px 8px rgba(0,0,0,.5)";
-      marker.textContent = "px:" + imgX + " py:" + imgY;
-      marker.style.left = e.clientX + "px";
-      marker.style.top = e.clientY - 30 + "px";
-      document.body.appendChild(marker);
-      setTimeout(function () {
-        marker.remove();
-      }, 4000);
-    }
-  });
 
   // ── Show / Hide ──
   function showThamQuan() {
