@@ -238,6 +238,130 @@ function register_legacy_login_failure(string $root, string $login): array
     ];
 }
 
+function login_ip_guard_path(string $root): string
+{
+    return $root . '/data/login_ip_guard.json';
+}
+
+function read_login_ip_guards(string $root): array
+{
+    $path = login_ip_guard_path($root);
+    if (!is_file($path)) {
+        return [];
+    }
+
+    $raw = @file_get_contents($path);
+    if ($raw === false || trim($raw) === '') {
+        return [];
+    }
+
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : [];
+}
+
+function write_login_ip_guards(string $root, array $guards): void
+{
+    $path = login_ip_guard_path($root);
+    $dir = dirname($path);
+    if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+        throw new RuntimeException('Không thể tạo thư mục lưu trạng thái khóa IP');
+    }
+
+    $encoded = json_encode($guards, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($encoded === false) {
+        throw new RuntimeException('Không thể mã hóa trạng thái khóa IP');
+    }
+
+    $tmpPath = $path . '.tmp';
+    if (file_put_contents($tmpPath, $encoded . PHP_EOL, LOCK_EX) === false) {
+        throw new RuntimeException('Không thể ghi trạng thái khóa IP');
+    }
+
+    if (!rename($tmpPath, $path)) {
+        @unlink($tmpPath);
+        throw new RuntimeException('Không thể cập nhật trạng thái khóa IP');
+    }
+}
+
+function login_ip_guard_key(string $ip): string
+{
+    return hash('sha256', trim($ip));
+}
+
+function get_login_ip_guard(string $root, string $ip): array
+{
+    if ($ip === '') {
+        return [
+            'failed_attempts' => 0,
+            'locked_until' => null,
+        ];
+    }
+
+    $guards = read_login_ip_guards($root);
+    $entry = $guards[login_ip_guard_key($ip)] ?? null;
+    if (!is_array($entry)) {
+        return [
+            'failed_attempts' => 0,
+            'locked_until' => null,
+        ];
+    }
+
+    return [
+        'failed_attempts' => (int)($entry['failed_attempts'] ?? 0),
+        'locked_until' => !empty($entry['locked_until']) ? (string)$entry['locked_until'] : null,
+    ];
+}
+
+function clear_login_ip_guard(string $root, string $ip): void
+{
+    if ($ip === '') {
+        return;
+    }
+
+    $guards = read_login_ip_guards($root);
+    $key = login_ip_guard_key($ip);
+    if (!isset($guards[$key])) {
+        return;
+    }
+
+    unset($guards[$key]);
+    write_login_ip_guards($root, $guards);
+}
+
+function register_login_ip_failure(string $root, string $ip, string $login = ''): array
+{
+    if ($ip === '') {
+        return [
+            'failed_attempts' => 0,
+            'locked_until' => null,
+        ];
+    }
+
+    $guards = read_login_ip_guards($root);
+    $key = login_ip_guard_key($ip);
+    $entry = $guards[$key] ?? [];
+    $failedAttempts = (int)($entry['failed_attempts'] ?? 0) + 1;
+    $lockedUntil = null;
+    if ($failedAttempts >= BDS_LOGIN_MAX_FAILED_ATTEMPTS) {
+        $failedAttempts = BDS_LOGIN_MAX_FAILED_ATTEMPTS;
+        $lockedUntil = date('Y-m-d H:i:s', time() + BDS_LOGIN_LOCKOUT_SECONDS);
+    }
+
+    $guards[$key] = [
+        'ip' => $ip,
+        'last_login' => $login,
+        'failed_attempts' => $failedAttempts,
+        'locked_until' => $lockedUntil,
+        'updated_at' => date(DATE_ATOM),
+    ];
+    write_login_ip_guards($root, $guards);
+
+    return [
+        'failed_attempts' => $failedAttempts,
+        'locked_until' => $lockedUntil,
+    ];
+}
+
 function read_json_body(): array
 {
     $raw = file_get_contents('php://input');
@@ -687,6 +811,19 @@ function login_lockout_message(?string $lockedUntil = null): string
     return $base . ' Thời gian khóa là 72 giờ hoặc cho tới khi quản trị viên reset mật khẩu.';
 }
 
+function login_ip_lockout_message(?string $lockedUntil = null): string
+{
+    $base = 'Địa chỉ mạng/IP hiện tại đã bị khóa tạm thời vì có quá nhiều lần đăng nhập sai.';
+    if ($lockedUntil) {
+        $timestamp = strtotime($lockedUntil);
+        if ($timestamp !== false) {
+            return $base . ' Hệ thống sẽ mở lại lúc ' . date('H:i d/m/Y', $timestamp) . '. Bạn có thể đổi sang mạng khác hoặc liên hệ quản trị viên nếu cần xử lý sớm.';
+        }
+    }
+
+    return $base . ' Thời gian khóa là 72 giờ.';
+}
+
 function login_failed_attempt_message(int $failedAttempts): string
 {
     $remaining = max(0, BDS_LOGIN_MAX_FAILED_ATTEMPTS - $failedAttempts);
@@ -695,6 +832,26 @@ function login_failed_attempt_message(int $failedAttempts): string
     }
 
     return 'Sai tài khoản hoặc mật khẩu. Bạn còn ' . $remaining . ' lần thử trước khi tài khoản bị khóa trong 72 giờ.';
+}
+
+function login_ip_failed_attempt_message(int $failedAttempts): string
+{
+    $remaining = max(0, BDS_LOGIN_MAX_FAILED_ATTEMPTS - $failedAttempts);
+    if ($remaining <= 0) {
+        return login_ip_lockout_message();
+    }
+
+    return 'Sai tài khoản hoặc mật khẩu. Từ địa chỉ mạng/IP hiện tại, bạn còn ' . $remaining . ' lần thử trước khi bị khóa trong 72 giờ.';
+}
+
+function login_ip_remaining_note(int $failedAttempts): string
+{
+    $remaining = max(0, BDS_LOGIN_MAX_FAILED_ATTEMPTS - $failedAttempts);
+    if ($remaining <= 0) {
+        return ' IP hiện tại cũng đã chạm ngưỡng khóa.';
+    }
+
+    return ' IP hiện tại còn ' . $remaining . ' lần thử.';
 }
 
 function normalize_login_error_message(string $message): string
@@ -1042,6 +1199,12 @@ if ($action === 'login') {
     if ($login === '' || $password === '') {
         respond(['ok' => false, 'error' => 'Vui lòng nhập đủ tài khoản và mật khẩu'], 422);
     }
+    $ipAddress = client_ip();
+    $ipGuard = get_login_ip_guard($root, $ipAddress);
+    if (!empty($ipGuard['locked_until']) && strtotime((string)$ipGuard['locked_until']) > time()) {
+        respond(['ok' => false, 'error' => login_ip_lockout_message((string)$ipGuard['locked_until'])], 401);
+    }
+
     $isLegacyLogin = hash_equals((string)$config['username'], $login);
     if ($isLegacyLogin) {
         $legacyGuard = get_legacy_login_guard($root, $login);
@@ -1055,6 +1218,7 @@ if ($action === 'login') {
     if ($pdo) {
         try {
             $admin = handle_database_login($pdo, $login, $password);
+            clear_login_ip_guard($root, $ipAddress);
             if ($isLegacyLogin) {
                 clear_legacy_login_guard($root, $login);
             }
@@ -1070,6 +1234,7 @@ if ($action === 'login') {
     }
 
     if ($isLegacyLogin && hash_equals((string)$config['password'], $password)) {
+        clear_login_ip_guard($root, $ipAddress);
         clear_legacy_login_guard($root, $login);
         $admin = [
             'id' => null,
@@ -1090,12 +1255,28 @@ if ($action === 'login') {
         ]);
     }
 
+    $ipGuard = register_login_ip_failure($root, $ipAddress, $login);
+    $ipLockMessage = !empty($ipGuard['locked_until'])
+        ? login_ip_lockout_message((string)$ipGuard['locked_until'])
+        : login_ip_failed_attempt_message((int)$ipGuard['failed_attempts']);
+    if (!empty($ipGuard['locked_until'])) {
+        $dbError = $ipLockMessage;
+    }
+
     if ($isLegacyLogin) {
         $legacyGuard = register_legacy_login_failure($root, $login);
         if (!empty($legacyGuard['locked_until'])) {
             $dbError = login_lockout_message((string)$legacyGuard['locked_until']);
         } else {
-            $dbError = login_failed_attempt_message((int)$legacyGuard['failed_attempts']);
+            $dbError = login_failed_attempt_message((int)$legacyGuard['failed_attempts']) . login_ip_remaining_note((int)$ipGuard['failed_attempts']);
+        }
+    } elseif ($dbError === null || stripos($dbError, 'Sai tài khoản hoặc mật khẩu') !== false) {
+        if (!empty($ipGuard['locked_until'])) {
+            $dbError = $ipLockMessage;
+        } elseif (is_string($dbError) && stripos($dbError, 'Bạn còn') !== false) {
+            $dbError .= login_ip_remaining_note((int)$ipGuard['failed_attempts']);
+        } else {
+            $dbError = $ipLockMessage;
         }
     }
 
