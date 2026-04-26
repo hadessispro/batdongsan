@@ -54,6 +54,8 @@ $allowedUploadExt = [
 const BDS_LOGIN_MAX_FAILED_ATTEMPTS = 5;
 const BDS_LOGIN_LOCKOUT_SECONDS = 72 * 60 * 60;
 const BDS_PRELOAD_MEDIA_LIMIT = 12;
+const BDS_RATE_LIMIT_DEFAULT_GET_WINDOW = 60;
+const BDS_RATE_LIMIT_DEFAULT_POST_WINDOW = 600;
 
 function json_payload_string(array $payload): string
 {
@@ -360,6 +362,305 @@ function register_login_ip_failure(string $root, string $ip, string $login = '')
         'failed_attempts' => $failedAttempts,
         'locked_until' => $lockedUntil,
     ];
+}
+
+function rate_limit_state_path(string $root): string
+{
+    return $root . '/data/api_rate_limits.json';
+}
+
+function normalize_rate_limit_state(array $state): array
+{
+    $now = time();
+    $normalized = [];
+    foreach ($state as $key => $entry) {
+        if (!is_string($key) || !is_array($entry)) {
+            continue;
+        }
+
+        $resetAt = (int)($entry['reset_at'] ?? 0);
+        if ($resetAt <= $now) {
+            continue;
+        }
+
+        $count = max(0, (int)($entry['count'] ?? 0));
+        if ($count <= 0) {
+            continue;
+        }
+
+        $normalized[$key] = [
+            'count' => $count,
+            'reset_at' => $resetAt,
+            'ip' => (string)($entry['ip'] ?? ''),
+            'scope' => (string)($entry['scope'] ?? ''),
+            'updated_at' => (string)($entry['updated_at'] ?? ''),
+        ];
+    }
+
+    return $normalized;
+}
+
+function update_rate_limit_state(string $root, callable $callback)
+{
+    $path = rate_limit_state_path($root);
+    $dir = dirname($path);
+    if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+        throw new RuntimeException('Không thể tạo thư mục lưu trạng thái rate limit');
+    }
+
+    $handle = fopen($path, 'c+');
+    if ($handle === false) {
+        throw new RuntimeException('Không thể mở file trạng thái rate limit');
+    }
+
+    try {
+        if (!flock($handle, LOCK_EX)) {
+            throw new RuntimeException('Không thể khóa file trạng thái rate limit');
+        }
+
+        rewind($handle);
+        $raw = stream_get_contents($handle);
+        $decoded = [];
+        if (is_string($raw) && trim($raw) !== '') {
+            $json = json_decode($raw, true);
+            if (is_array($json)) {
+                $decoded = $json;
+            }
+        }
+
+        $state = normalize_rate_limit_state($decoded);
+        $result = $callback($state);
+
+        if (!is_array($result) || !array_key_exists('state', $result)) {
+            throw new RuntimeException('Callback rate limit trả về dữ liệu không hợp lệ');
+        }
+
+        $newState = normalize_rate_limit_state(is_array($result['state']) ? $result['state'] : []);
+        $encoded = json_encode($newState, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        if ($encoded === false) {
+            throw new RuntimeException('Không thể mã hóa trạng thái rate limit');
+        }
+
+        rewind($handle);
+        if (!ftruncate($handle, 0)) {
+            throw new RuntimeException('Không thể làm trống file trạng thái rate limit');
+        }
+
+        if (fwrite($handle, $encoded . PHP_EOL) === false) {
+            throw new RuntimeException('Không thể ghi file trạng thái rate limit');
+        }
+
+        fflush($handle);
+        flock($handle, LOCK_UN);
+
+        return $result['result'] ?? null;
+    } finally {
+        fclose($handle);
+    }
+}
+
+function rate_limit_policy(string $action, string $method, string $resource, ?array $admin): ?array
+{
+    $method = strtoupper($method);
+    $isAuthenticated = $admin !== null;
+
+    if ($action === 'status') {
+        return [
+            'scope' => 'action:status:' . ($isAuthenticated ? 'auth' : 'guest'),
+            'max' => $isAuthenticated ? 360 : 240,
+            'window' => 60,
+            'message' => 'Bạn đang kiểm tra trạng thái website quá nhanh. Vui lòng thử lại sau ít giây.',
+        ];
+    }
+
+    if ($action === 'login') {
+        return [
+            'scope' => 'action:login',
+            'max' => 15,
+            'window' => 600,
+            'message' => 'Bạn đang gửi yêu cầu đăng nhập quá nhanh. Vui lòng chờ ít phút rồi thử lại.',
+        ];
+    }
+
+    if ($action === 'cache-refresh-status') {
+        return [
+            'scope' => 'action:cache-refresh-status',
+            'max' => 180,
+            'window' => 60,
+            'message' => 'Bạn đang kiểm tra tiến trình preload quá nhanh. Vui lòng thử lại sau ít giây.',
+        ];
+    }
+
+    if ($action === 'refresh-app-cache') {
+        return [
+            'scope' => 'action:refresh-app-cache',
+            'max' => 6,
+            'window' => 600,
+            'message' => 'Bạn đã bấm xóa cache quá nhiều lần trong thời gian ngắn. Vui lòng chờ rồi thử lại.',
+        ];
+    }
+
+    if ($action === 'upload') {
+        return [
+            'scope' => 'action:upload',
+            'max' => 20,
+            'window' => 600,
+            'message' => 'Bạn đang upload quá nhanh. Vui lòng chờ một chút rồi thử lại.',
+        ];
+    }
+
+    if ($action === 'delete-file') {
+        return [
+            'scope' => 'action:delete-file',
+            'max' => 60,
+            'window' => 600,
+            'message' => 'Bạn đang xóa file quá nhanh. Vui lòng chờ một chút rồi thử lại.',
+        ];
+    }
+
+    if ($action === 'list-files') {
+        return [
+            'scope' => 'action:list-files',
+            'max' => 180,
+            'window' => 60,
+            'message' => 'Bạn đang duyệt file quá nhanh. Vui lòng thử lại sau ít giây.',
+        ];
+    }
+
+    if (in_array($action, ['list-users', 'create-user', 'update-user', 'change-password', 'reset-user-password'], true)) {
+        return [
+            'scope' => 'action:' . $action,
+            'max' => $method === 'GET' ? 60 : 20,
+            'window' => $method === 'GET' ? 60 : 600,
+            'message' => 'Bạn đang thao tác quản trị quá nhanh. Vui lòng chờ một chút rồi thử lại.',
+        ];
+    }
+
+    if ($resource !== '') {
+        if ($method === 'GET') {
+            return [
+                'scope' => 'resource:get:' . $resource,
+                'max' => 180,
+                'window' => 60,
+                'message' => 'Bạn đang tải dữ liệu cấu hình quá nhanh. Vui lòng thử lại sau ít giây.',
+            ];
+        }
+
+        return [
+            'scope' => 'resource:write:' . $resource,
+            'max' => 30,
+            'window' => 600,
+            'message' => 'Bạn đang lưu dữ liệu cấu hình quá nhanh. Vui lòng chờ một chút rồi thử lại.',
+        ];
+    }
+
+    if ($action === 'logout') {
+        return [
+            'scope' => 'action:logout',
+            'max' => 30,
+            'window' => 60,
+            'message' => 'Bạn đang gửi yêu cầu đăng xuất quá nhanh. Vui lòng thử lại sau ít giây.',
+        ];
+    }
+
+    return [
+        'scope' => 'default:' . strtolower($method),
+        'max' => $method === 'GET' ? 240 : 60,
+        'window' => $method === 'GET' ? BDS_RATE_LIMIT_DEFAULT_GET_WINDOW : BDS_RATE_LIMIT_DEFAULT_POST_WINDOW,
+        'message' => 'Bạn đang gửi quá nhiều yêu cầu trong thời gian ngắn. Vui lòng chờ một chút rồi thử lại.',
+    ];
+}
+
+function apply_rate_limit_headers(array $policy, int $remaining, int $resetAt): void
+{
+    header('X-RateLimit-Limit: ' . max(1, (int)($policy['max'] ?? 0)));
+    header('X-RateLimit-Remaining: ' . max(0, $remaining));
+    header('X-RateLimit-Reset: ' . max(time(), $resetAt));
+    header('X-RateLimit-Window: ' . max(1, (int)($policy['window'] ?? 0)));
+}
+
+function enforce_rate_limit(string $root, string $ip, ?array $policy): void
+{
+    if ($policy === null || $ip === '') {
+        return;
+    }
+
+    $scope = trim((string)($policy['scope'] ?? ''));
+    $max = max(1, (int)($policy['max'] ?? 0));
+    $window = max(1, (int)($policy['window'] ?? 0));
+    $message = trim((string)($policy['message'] ?? 'Bạn đang gửi quá nhiều yêu cầu. Vui lòng thử lại sau.'));
+    if ($scope === '') {
+        return;
+    }
+
+    try {
+        $result = update_rate_limit_state($root, static function (array $state) use ($scope, $max, $window, $ip): array {
+            $now = time();
+            $key = hash('sha256', $scope . '|' . $ip);
+            $entry = $state[$key] ?? null;
+            $resetAt = is_array($entry) ? (int)($entry['reset_at'] ?? 0) : 0;
+            $count = is_array($entry) ? (int)($entry['count'] ?? 0) : 0;
+
+            if ($resetAt <= $now) {
+                $resetAt = $now + $window;
+                $count = 0;
+            }
+
+            if ($count >= $max) {
+                return [
+                    'state' => $state,
+                    'result' => [
+                        'allowed' => false,
+                        'remaining' => 0,
+                        'reset_at' => $resetAt,
+                        'retry_after' => max(1, $resetAt - $now),
+                    ],
+                ];
+            }
+
+            $count++;
+            $state[$key] = [
+                'count' => $count,
+                'reset_at' => $resetAt,
+                'ip' => $ip,
+                'scope' => $scope,
+                'updated_at' => date(DATE_ATOM),
+            ];
+
+            return [
+                'state' => $state,
+                'result' => [
+                    'allowed' => true,
+                    'remaining' => max(0, $max - $count),
+                    'reset_at' => $resetAt,
+                    'retry_after' => 0,
+                ],
+            ];
+        });
+    } catch (Throwable $e) {
+        return;
+    }
+
+    if (!is_array($result)) {
+        return;
+    }
+
+    $remaining = max(0, (int)($result['remaining'] ?? 0));
+    $resetAt = max(time(), (int)($result['reset_at'] ?? time()));
+    apply_rate_limit_headers($policy, $remaining, $resetAt);
+
+    if (!empty($result['allowed'])) {
+        return;
+    }
+
+    $retryAfter = max(1, (int)($result['retry_after'] ?? ($resetAt - time())));
+    header('Retry-After: ' . $retryAfter);
+    respond([
+        'ok' => false,
+        'error' => $message,
+        'code' => 'rate_limited',
+        'retry_after' => $retryAfter,
+    ], 429);
 }
 
 function read_json_body(): array
@@ -1175,9 +1476,12 @@ function handle_database_login(PDO $pdo, string $login, string $password): array
 
 $action = (string)($_GET['action'] ?? '');
 $method = (string)($_SERVER['REQUEST_METHOD'] ?? 'GET');
+$resource = (string)($_GET['resource'] ?? '');
+$adminContext = current_admin();
+enforce_rate_limit($root, client_ip(), rate_limit_policy($action, $method, $resource, $adminContext));
 
 if ($action === 'status') {
-    $admin = current_admin();
+    $admin = $adminContext;
     respond([
         'ok' => true,
         'authenticated' => $admin !== null,
@@ -1771,7 +2075,6 @@ if ($action === 'refresh-app-cache') {
     }
 }
 
-$resource = (string)($_GET['resource'] ?? '');
 if ($resource === '') {
     respond(['ok' => false, 'error' => 'Missing resource'], 400);
 }
