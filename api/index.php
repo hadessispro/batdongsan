@@ -134,6 +134,110 @@ function write_cache_refresh_status(string $root, array $status): void
     }
 }
 
+function legacy_login_guard_path(string $root): string
+{
+    return $root . '/data/legacy_login_guard.json';
+}
+
+function read_legacy_login_guards(string $root): array
+{
+    $path = legacy_login_guard_path($root);
+    if (!is_file($path)) {
+        return [];
+    }
+
+    $raw = @file_get_contents($path);
+    if ($raw === false || trim($raw) === '') {
+        return [];
+    }
+
+    $data = json_decode($raw, true);
+    return is_array($data) ? $data : [];
+}
+
+function write_legacy_login_guards(string $root, array $guards): void
+{
+    $path = legacy_login_guard_path($root);
+    $dir = dirname($path);
+    if (!is_dir($dir) && !mkdir($dir, 0775, true) && !is_dir($dir)) {
+        throw new RuntimeException('Không thể tạo thư mục lưu trạng thái đăng nhập legacy');
+    }
+
+    $encoded = json_encode($guards, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+    if ($encoded === false) {
+        throw new RuntimeException('Không thể mã hóa trạng thái đăng nhập legacy');
+    }
+
+    $tmpPath = $path . '.tmp';
+    if (file_put_contents($tmpPath, $encoded . PHP_EOL, LOCK_EX) === false) {
+        throw new RuntimeException('Không thể ghi trạng thái đăng nhập legacy');
+    }
+
+    if (!rename($tmpPath, $path)) {
+        @unlink($tmpPath);
+        throw new RuntimeException('Không thể cập nhật trạng thái đăng nhập legacy');
+    }
+}
+
+function legacy_login_guard_key(string $login): string
+{
+    return hash('sha256', mb_strtolower(trim($login), 'UTF-8'));
+}
+
+function get_legacy_login_guard(string $root, string $login): array
+{
+    $guards = read_legacy_login_guards($root);
+    $entry = $guards[legacy_login_guard_key($login)] ?? null;
+    if (!is_array($entry)) {
+        return [
+            'failed_attempts' => 0,
+            'locked_until' => null,
+        ];
+    }
+
+    return [
+        'failed_attempts' => (int)($entry['failed_attempts'] ?? 0),
+        'locked_until' => !empty($entry['locked_until']) ? (string)$entry['locked_until'] : null,
+    ];
+}
+
+function clear_legacy_login_guard(string $root, string $login): void
+{
+    $guards = read_legacy_login_guards($root);
+    $key = legacy_login_guard_key($login);
+    if (!isset($guards[$key])) {
+        return;
+    }
+    unset($guards[$key]);
+    write_legacy_login_guards($root, $guards);
+}
+
+function register_legacy_login_failure(string $root, string $login): array
+{
+    $guards = read_legacy_login_guards($root);
+    $key = legacy_login_guard_key($login);
+    $entry = $guards[$key] ?? [];
+    $failedAttempts = (int)($entry['failed_attempts'] ?? 0) + 1;
+    $lockedUntil = null;
+    if ($failedAttempts >= BDS_LOGIN_MAX_FAILED_ATTEMPTS) {
+        $failedAttempts = BDS_LOGIN_MAX_FAILED_ATTEMPTS;
+        $lockedUntil = date('Y-m-d H:i:s', time() + BDS_LOGIN_LOCKOUT_SECONDS);
+    }
+
+    $guards[$key] = [
+        'login' => $login,
+        'failed_attempts' => $failedAttempts,
+        'locked_until' => $lockedUntil,
+        'updated_at' => date(DATE_ATOM),
+    ];
+    write_legacy_login_guards($root, $guards);
+
+    return [
+        'failed_attempts' => $failedAttempts,
+        'locked_until' => $lockedUntil,
+    ];
+}
+
 function read_json_body(): array
 {
     $raw = file_get_contents('php://input');
@@ -938,12 +1042,22 @@ if ($action === 'login') {
     if ($login === '' || $password === '') {
         respond(['ok' => false, 'error' => 'Vui lòng nhập đủ tài khoản và mật khẩu'], 422);
     }
+    $isLegacyLogin = hash_equals((string)$config['username'], $login);
+    if ($isLegacyLogin) {
+        $legacyGuard = get_legacy_login_guard($root, $login);
+        if (!empty($legacyGuard['locked_until']) && strtotime((string)$legacyGuard['locked_until']) > time()) {
+            respond(['ok' => false, 'error' => login_lockout_message((string)$legacyGuard['locked_until'])], 401);
+        }
+    }
 
     $dbError = null;
     $pdo = bds_try_pdo($config);
     if ($pdo) {
         try {
             $admin = handle_database_login($pdo, $login, $password);
+            if ($isLegacyLogin) {
+                clear_legacy_login_guard($root, $login);
+            }
             start_admin_session($admin);
             audit_log($pdo, $admin, 'login', $admin['username'], 'success', ['source' => 'database']);
             respond(['ok' => true, 'authenticated' => true, 'user' => $admin, 'source' => 'database']);
@@ -955,7 +1069,8 @@ if ($action === 'login') {
         $dbError = 'Hệ thống đăng nhập chưa kết nối được database. Nếu bạn còn tài khoản legacy dự phòng thì có thể dùng tạm, nếu không hãy liên hệ quản trị viên.';
     }
 
-    if (hash_equals((string)$config['username'], $login) && hash_equals((string)$config['password'], $password)) {
+    if ($isLegacyLogin && hash_equals((string)$config['password'], $password)) {
+        clear_legacy_login_guard($root, $login);
         $admin = [
             'id' => null,
             'username' => $login,
@@ -973,6 +1088,15 @@ if ($action === 'login') {
             'source' => 'legacy',
             'warning' => $dbError ?: 'Bạn đang dùng tài khoản cấu hình cũ. Hãy tạo hoặc reset tài khoản database trong phần Cài đặt chung.',
         ]);
+    }
+
+    if ($isLegacyLogin) {
+        $legacyGuard = register_legacy_login_failure($root, $login);
+        if (!empty($legacyGuard['locked_until'])) {
+            $dbError = login_lockout_message((string)$legacyGuard['locked_until']);
+        } else {
+            $dbError = login_failed_attempt_message((int)$legacyGuard['failed_attempts']);
+        }
     }
 
     respond(['ok' => false, 'error' => $dbError ?: 'Sai tài khoản hoặc mật khẩu'], 401);
