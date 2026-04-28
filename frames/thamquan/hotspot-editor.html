@@ -1154,7 +1154,7 @@
             // ★ FIX: Chiều kéo camera — trừ dx thay vì cộng (khớp main.js)
             camLon = dSLon - (e.clientX - dSX) * 0.15;
             camLat = dSLat + (e.clientY - dSY) * 0.15;
-            camLat = Math.max(-20, Math.min(85, camLat));
+            camLat = Math.max(-85, Math.min(85, camLat));
           }
         });
 
@@ -1181,7 +1181,7 @@
               // ★ FIX: Chiều kéo camera — khớp thamquan-vr360.js
               camLon = dSLon - (e.touches[0].clientX - dSX) * 0.15;
               camLat = dSLat + (e.touches[0].clientY - dSY) * 0.15;
-              camLat = Math.max(-20, Math.min(85, camLat));
+              camLat = Math.max(-85, Math.min(85, camLat));
               e.preventDefault();
             }
           },
