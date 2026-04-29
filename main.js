@@ -1490,7 +1490,10 @@ loadAll();
   var _thumbLoadingMap = {};
   var _loadingAbort = null;
   var _thumbsPreloaded = false;
-  var MOBILE_VR_FULLRES_ENABLED = false;
+  var MOBILE_VR_FULLRES_ENABLED = true;
+  var MOBILE_VR_LOW_WIDTH = 3072;
+  var MOBILE_VR_DEFAULT_WIDTH = 4096;
+  var MOBILE_VR_HIGH_WIDTH = 8192;
 
   function getThumbSrc(fullSrc) {
     var rawFullSrc = stripVRAssetCacheParams(fullSrc).replace(/^\.\//, "");
@@ -1618,6 +1621,92 @@ loadAll();
     img.src = thumbSrc;
   }
 
+  function buildVRTexture(source) {
+    if (!source) return null;
+    var tex = new THREE.Texture(source);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.generateMipmaps = false;
+    var maxAniso = window._VR_SHARED.renderer.capabilities.getMaxAnisotropy();
+    var mobileProfile = IS_MOBILE ? getMobileVRDeviceProfile() : null;
+    tex.anisotropy = IS_MOBILE
+      ? Math.min(maxAniso, mobileProfile && mobileProfile.lowMemory ? 2 : 4)
+      : maxAniso;
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  function getMobileVRDeviceProfile() {
+    var memory =
+      typeof navigator !== "undefined" &&
+      typeof navigator.deviceMemory === "number" &&
+      navigator.deviceMemory > 0
+        ? navigator.deviceMemory
+        : 0;
+    var maxTextureSize =
+      window._VR_SHARED.renderer &&
+      window._VR_SHARED.renderer.capabilities &&
+      window._VR_SHARED.renderer.capabilities.maxTextureSize
+        ? window._VR_SHARED.renderer.capabilities.maxTextureSize
+        : MOBILE_VR_DEFAULT_WIDTH;
+    return {
+      memory: memory,
+      maxTextureSize: maxTextureSize,
+      lowMemory: memory > 0 && memory <= 4,
+      highEnd: memory >= 8 && maxTextureSize >= MOBILE_VR_HIGH_WIDTH,
+    };
+  }
+
+  function getMobileVRResizeOptions() {
+    var profile = getMobileVRDeviceProfile();
+    var preferredWidth = profile.lowMemory
+      ? MOBILE_VR_LOW_WIDTH
+      : profile.highEnd
+        ? MOBILE_VR_HIGH_WIDTH
+        : MOBILE_VR_DEFAULT_WIDTH;
+    var targetWidth = Math.min(
+      preferredWidth,
+      profile.maxTextureSize,
+    );
+    return {
+      resizeWidth: targetWidth,
+      resizeHeight: Math.round(targetWidth / 2),
+      resizeQuality: "high",
+      imageOrientation: "none",
+    };
+  }
+
+  function loadMobileAdaptiveTextureFallback(fullSrc, callback) {
+    var img = new Image();
+    img.crossOrigin = "anonymous";
+    img.decoding = "async";
+    img.onload = function () {
+      var resizeOptions = getMobileVRResizeOptions();
+      var source = img;
+      if (resizeOptions.resizeWidth < img.naturalWidth) {
+        var canvasEl = document.createElement("canvas");
+        canvasEl.width = resizeOptions.resizeWidth;
+        canvasEl.height = Math.round(
+          (img.naturalHeight * resizeOptions.resizeWidth) / img.naturalWidth,
+        );
+        var ctx = canvasEl.getContext("2d", { alpha: false });
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = "high";
+          ctx.drawImage(img, 0, 0, canvasEl.width, canvasEl.height);
+          source = canvasEl;
+        }
+      }
+      var tex = buildVRTexture(source);
+      if (tex) _texCache[fullSrc] = tex;
+      callback && callback(tex);
+    };
+    img.onerror = function () {
+      callback && callback(null);
+    };
+    img.src = fullSrc;
+  }
+
   // ★ Expose để gọi từ ngoài khi mở tab Tiện Ích
   window._preloadVRThumbs = preloadAllThumbs;
 
@@ -1634,28 +1723,31 @@ loadAll();
       return;
     }
 
-    if (IS_MOBILE && !MOBILE_VR_FULLRES_ENABLED) {
-      callback && callback(null);
-      return;
-    }
-
     // Ưu tiên fetch + createImageBitmap (decode off main thread)
     if (typeof createImageBitmap === "function" && typeof fetch === "function") {
       fetch(fullSrc)
         .then(function (r) { return r.blob(); })
-        .then(function (blob) { return createImageBitmap(blob, { imageOrientation: IS_MOBILE ? "none" : "flipY" }); })
+        .then(function (blob) {
+          if (IS_MOBILE) {
+            if (!MOBILE_VR_FULLRES_ENABLED) return null;
+            return createImageBitmap(blob, getMobileVRResizeOptions());
+          }
+          return createImageBitmap(blob, { imageOrientation: "flipY" });
+        })
         .then(function (bmp) {
-          var tex = new THREE.Texture(bmp);
-          tex.minFilter = THREE.LinearFilter;
-          tex.magFilter = THREE.LinearFilter;
-          tex.generateMipmaps = false;
-          var maxAniso = window._VR_SHARED.renderer.capabilities.getMaxAnisotropy();
-          tex.anisotropy = IS_MOBILE ? Math.min(maxAniso, 4) : maxAniso;
-          tex.needsUpdate = true;
+          var tex = buildVRTexture(bmp);
+          if (!tex) {
+            callback(null);
+            return;
+          }
           _texCache[fullSrc] = tex;
           callback(tex);
         })
         .catch(function () {
+          if (IS_MOBILE) {
+            loadMobileAdaptiveTextureFallback(fullSrc, callback);
+            return;
+          }
           // Fallback: dùng THREE.TextureLoader
           var loader = new THREE.TextureLoader();
           loader.load(
@@ -1675,6 +1767,10 @@ loadAll();
           );
         });
     } else {
+      if (IS_MOBILE) {
+        loadMobileAdaptiveTextureFallback(fullSrc, callback);
+        return;
+      }
       var loader = new THREE.TextureLoader();
       loader.load(
         fullSrc,
@@ -1758,13 +1854,11 @@ loadAll();
         if (thisLoad.cancelled || _texCache[fullSrc]) return;
         if (thumbTex) applyTexture(thumbTex, fullSrc);
       });
-      // 3. Desktop mới tự nâng lên full-res; mobile giữ thumb 2048x1024 để tránh lật dọc và quá tải GPU
-      if (!IS_MOBILE || MOBILE_VR_FULLRES_ENABLED) {
-        loadFullTexture(src, function (fullTex) {
-          if (thisLoad.cancelled) return;
-          applyTexture(fullTex, fullSrc);
-        });
-      }
+      // 3. Desktop load full-res gốc; mobile load cùng source nhưng resize an toàn trước khi upload texture
+      loadFullTexture(src, function (fullTex) {
+        if (thisLoad.cancelled) return;
+        applyTexture(fullTex, fullSrc);
+      });
     }
 
     // Hiện modal
