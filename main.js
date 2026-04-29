@@ -1327,6 +1327,9 @@ loadAll();
     return byPathMatch[1];
   }
 
+  window.resolveVRPanoSrc = resolveVRPanoSrc;
+  window.detectVRLogicalPanoKey = detectVRLogicalPanoKey;
+
   Object.keys(VR_MAP).forEach(function (key) {
     if (VR_MAP[key] && VR_MAP[key].src) {
       VR_MAP[key].src = resolveVRPanoSrc(VR_MAP[key].src);
@@ -1418,6 +1421,11 @@ loadAll();
     return VR_MAP[name] || { src: VR_MAP.default.src, lon: 0, lat: 0, fov: 90 };
   }
   window._getVRConfig = getVRConfig;
+  window.getVRSrc = function (name, rawName) {
+    var cleanName = name ? String(name).replace(/^\d+\.\s*/, "").trim() : "";
+    var config = getVRConfig(cleanName || name, rawName || name);
+    return config && config.src ? config.src : VR_MAP.default.src;
+  };
 
   // ── Three.js state ───────────────────────────────────────
   window._VR_SHARED = {
@@ -2168,7 +2176,9 @@ loadAll();
           if (!config || config.src === window.VR_MAP_DEFAULT) {
             // Nếu là điểm từ JSON chưa có trong VR_MAP -> Tự tính lon/lat từ px/py
             // targetKey chính là mã PANO (ví dụ: PANO_1_2)
-            var src = resolveVRPanoSrc(targetKey);
+            var src = window.resolveVRPanoSrc
+              ? window.resolveVRPanoSrc(targetKey)
+              : targetKey;
             var lon = (hsPx / 2000) * 360;
             var lat = 90 - (hsPy / 1000) * 180;
             window._vrCurrentRawName = label || targetKey;
@@ -2210,7 +2220,9 @@ loadAll();
   }
   function openVRWithHotspots(name, src, _lon, _lat) {
     window._vrCurrentName = name; // [FIX] Lưu tên pano hiện tại
-    window._currentPanoKey = detectVRLogicalPanoKey(src);
+    window._currentPanoKey = window.detectVRLogicalPanoKey
+      ? window.detectVRLogicalPanoKey(src)
+      : null;
 
     // Xóa hotspot cũ ngay lập tức trước khi load PANO mới
     hsContainer.innerHTML = "";
@@ -2231,7 +2243,12 @@ loadAll();
       const name =
         this.querySelector(".dot-label")?.textContent || "Tham Quan 360°";
       window._vrCurrentRawName = name;
-      openVRWithHotspots(name, getVRSrc(name));
+      openVRWithHotspots(
+        name,
+        window.getVRSrc
+          ? window.getVRSrc(name, name)
+          : window.VR_MAP_DEFAULT || "frames/3dvr/PANO_16_4.jpg",
+      );
     });
   });
 
