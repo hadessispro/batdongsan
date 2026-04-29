@@ -39,6 +39,7 @@
   var PANO_SRC = versionedAsset("frames/tienich/PANO_1_1.jpg");
   var SPHERE_R = 500;
   var IS_MOBILE_VR = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  var MOBILE_TEXTURE_MAX_WIDTH = 3072;
 
   // ★ Loading overlay — chống trắng
   var loadingEl = null;
@@ -79,11 +80,39 @@
   // ★ Preload pano texture sớm
   var panoTexture = null;
   var panoReady = false;
+  var textureApplyPromise = null;
+  var optimizedTextureSource = null;
+
+  function releaseOptimizedTextureSource() {
+    if (
+      optimizedTextureSource &&
+      typeof optimizedTextureSource.close === "function"
+    ) {
+      try {
+        optimizedTextureSource.close();
+      } catch (err) {
+        // Ignore ImageBitmap close errors.
+      }
+    }
+    optimizedTextureSource = null;
+  }
+
+  function resetAppliedTexture() {
+    textureApplied = false;
+    textureApplyPromise = null;
+    releaseOptimizedTextureSource();
+    if (sphereMesh && sphereMesh.material && sphereMesh.material.map) {
+      sphereMesh.material.map.dispose();
+      sphereMesh.material.map = null;
+      sphereMesh.material.needsUpdate = true;
+    }
+  }
 
   function preloadPanoTexture() {
     if (panoReady || panoTexture) return;
     var img = new Image();
     img.crossOrigin = "anonymous";
+    img.decoding = "async";
     img.onload = function () {
       panoTexture = img;
       panoReady = true;
@@ -146,7 +175,7 @@
       PANO_SRC = versionedAsset(data.panoSrc.trim());
       panoTexture = null;
       panoReady = false;
-      textureApplied = false;
+      resetAppliedTexture();
     }
     if (Array.isArray(data.hotspots)) RAW_HOTSPOTS = data.hotspots;
     if (Array.isArray(data.texts)) RAW_3D_TEXTS = data.texts;
@@ -172,7 +201,7 @@
         // Giữ fallback hardcode để website vẫn chạy khi thiếu backend/config.
       })
       .then(function () {
-        preloadPanoTexture();
+        if (!IS_MOBILE_VR) preloadPanoTexture();
       });
   }
 
@@ -324,7 +353,7 @@
 });
     renderer.setClearColor(0x080c16, 1);
    renderer.setPixelRatio(
-  Math.min(window.devicePixelRatio || 1, 2),
+  IS_MOBILE_VR ? 1 : Math.min(window.devicePixelRatio || 1, 2),
 );
 
     scene = new THREE.Scene();
@@ -340,39 +369,117 @@ camera = new THREE.PerspectiveCamera(
 );
 
 // ★ Mobile: giảm segments mạnh hơn
-var segments = IS_MOBILE_VR ? 64 : 128;
-var segmentsV = IS_MOBILE_VR ? 32 : 64;
+var segments = IS_MOBILE_VR ? 40 : 128;
+var segmentsV = IS_MOBILE_VR ? 20 : 64;
 var geo = new THREE.SphereGeometry(SPHERE_R, segments, segmentsV);
 
-var mat = new THREE.MeshBasicMaterial({ side: THREE.BackSide });
+// Giữ đúng chuẩn panorama: chỉ đảo hình học một lần để tránh mobile render bị mirror.
+var mat = new THREE.MeshBasicMaterial({ side: THREE.FrontSide });
 sphereMesh = new THREE.Mesh(geo, mat);
 sphereMesh.scale.x = -1;
 scene.add(sphereMesh);
 
-textureApplied = false;
+resetAppliedTexture();
+  }
+
+  function buildDownscaledCanvas(source, targetWidth, targetHeight) {
+    var workCanvas = document.createElement("canvas");
+    workCanvas.width = targetWidth;
+    workCanvas.height = targetHeight;
+    var ctx = workCanvas.getContext("2d", { alpha: false });
+    if (!ctx) return source;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(source, 0, 0, targetWidth, targetHeight);
+    return workCanvas;
+  }
+
+  function resolveTextureSource(source) {
+    if (!source || !source.naturalWidth || !source.naturalHeight) {
+      return Promise.resolve(source);
+    }
+
+    var maxTextureSize =
+      renderer && renderer.capabilities && renderer.capabilities.maxTextureSize
+        ? renderer.capabilities.maxTextureSize
+        : source.naturalWidth;
+    var targetWidth = Math.min(source.naturalWidth, maxTextureSize);
+
+    if (IS_MOBILE_VR) {
+      targetWidth = Math.min(targetWidth, MOBILE_TEXTURE_MAX_WIDTH);
+    }
+
+    if (targetWidth >= source.naturalWidth) {
+      return Promise.resolve(source);
+    }
+
+    var targetHeight = Math.max(
+      1,
+      Math.round((source.naturalHeight * targetWidth) / source.naturalWidth),
+    );
+
+    if (typeof createImageBitmap === "function") {
+      return createImageBitmap(source, {
+        resizeWidth: targetWidth,
+        resizeHeight: targetHeight,
+        resizeQuality: "high",
+        imageOrientation: "none",
+      }).catch(function () {
+        return buildDownscaledCanvas(source, targetWidth, targetHeight);
+      });
+    }
+
+    return Promise.resolve(
+      buildDownscaledCanvas(source, targetWidth, targetHeight),
+    );
   }
 
   // ★ Apply texture — gọi sau khi initThree + panoReady
   function applyTexture() {
-    if (textureApplied || !panoReady || !panoTexture || !sphereMesh) return;
-    textureApplied = true;
+    if (
+      textureApplied ||
+      textureApplyPromise ||
+      !panoReady ||
+      !panoTexture ||
+      !sphereMesh
+    ) {
+      return;
+    }
 
-    var tex = new THREE.Texture(panoTexture);
-    tex.needsUpdate = true;
-    tex.minFilter = THREE.LinearFilter;
-    tex.magFilter = THREE.LinearFilter;
-    tex.generateMipmaps = false;
-    tex.anisotropy = IS_MOBILE_VR
-      ? 1
-      : renderer.capabilities.getMaxAnisotropy();
+    textureApplyPromise = resolveTextureSource(panoTexture)
+      .then(function (resolvedSource) {
+        if (!sphereMesh || !resolvedSource) return;
 
-    // Dispose texture cũ nếu có
-    if (sphereMesh.material.map) sphereMesh.material.map.dispose();
-    sphereMesh.material.map = tex;
-    sphereMesh.material.needsUpdate = true;
+        releaseOptimizedTextureSource();
+        if (resolvedSource !== panoTexture) {
+          optimizedTextureSource = resolvedSource;
+        }
 
-    // Ẩn loading sau khi texture applied
-    hideLoading();
+        var tex = new THREE.Texture(resolvedSource);
+        tex.needsUpdate = true;
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.generateMipmaps = false;
+        tex.anisotropy = IS_MOBILE_VR
+          ? 1
+          : renderer.capabilities.getMaxAnisotropy();
+
+        if ("colorSpace" in tex && THREE.SRGBColorSpace) {
+          tex.colorSpace = THREE.SRGBColorSpace;
+        }
+
+        if (sphereMesh.material.map) sphereMesh.material.map.dispose();
+        sphereMesh.material.map = tex;
+        sphereMesh.material.needsUpdate = true;
+        textureApplied = true;
+        hideLoading();
+      })
+      .catch(function () {
+        textureApplied = false;
+      })
+      .then(function () {
+        textureApplyPromise = null;
+      });
   }
 
   // ── Hotspots ──
