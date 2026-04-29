@@ -1304,6 +1304,68 @@ loadAll();
     },
     default: { src: "frames/3dvr/PANO_16_3.jpg", lon: 0, lat: 0, fov: 90 },
   };
+  const VR_PANO_FILE_ALIASES = {
+    PANO_03_3: "PANO_03_4.jpg",
+    PANO_04_3: "PANO_04_4.jpg",
+    PANO_05_3: "PANO_05_4.jpg",
+    PANO_06_3: "PANO_06_4.jpg",
+    PANO_07_4: "PANO_07_5.jpg",
+    PANO_08_4: "PANO_08_5.jpg",
+    PANO_09_3: "PANO_09_4.jpg",
+    PANO_10_3: "PANO_10_4.jpg",
+    PANO_11_3: "PANO_11_4.jpg",
+    PANO_12_3: "PANO_12_4.jpg",
+    PANO_13_3: "PANO_13_4.jpg",
+    PANO_14_3: "PANO_14_4.jpg",
+    PANO_15_3: "PANO_15_4.jpg",
+    PANO_16_3: "PANO_16_4.jpg",
+  };
+
+  function resolveVRPanoSrc(input) {
+    if (!input) return "";
+    var raw = String(input).replace(/^\.?\//, "");
+    if (/^PANO_[^./?#]+$/i.test(raw)) {
+      return (
+        "frames/3dvr/" +
+        (VR_PANO_FILE_ALIASES[raw] || raw + ".jpg")
+      );
+    }
+    var logicalMatch = raw.match(
+      /(?:^|\/)(PANO_[^\/?#]+)\.(jpe?g|png|webp|avif)$/i,
+    );
+    if (logicalMatch && VR_PANO_FILE_ALIASES[logicalMatch[1]]) {
+      return "frames/3dvr/" + VR_PANO_FILE_ALIASES[logicalMatch[1]];
+    }
+    return raw;
+  }
+
+  function detectVRLogicalPanoKey(input) {
+    if (!input) return null;
+    var raw = String(input);
+    var hashIndex = raw.indexOf("#");
+    if (hashIndex >= 0) raw = raw.slice(0, hashIndex);
+    var queryIndex = raw.indexOf("?");
+    if (queryIndex >= 0) raw = raw.slice(0, queryIndex);
+    raw = raw.replace(/^\.?\//, "");
+
+    var byPathMatch = raw.match(/(?:^|\/)(PANO_[^\/?#]+)\.(jpe?g|png|webp|avif)$/i);
+    if (!byPathMatch) return null;
+
+    var fileName = byPathMatch[0].split("/").pop().toUpperCase();
+    for (var logicalKey in VR_PANO_FILE_ALIASES) {
+      if (VR_PANO_FILE_ALIASES[logicalKey].toUpperCase() === fileName) {
+        return logicalKey;
+      }
+    }
+    return byPathMatch[1];
+  }
+
+  Object.keys(VR_MAP).forEach(function (key) {
+    if (VR_MAP[key] && VR_MAP[key].src) {
+      VR_MAP[key].src = resolveVRPanoSrc(VR_MAP[key].src);
+    }
+  });
+
   window.VR_MAP_DEFAULT = VR_MAP["default"].src;
 
   function stripVRAssetCacheParams(src) {
@@ -1358,7 +1420,7 @@ loadAll();
 
     if (am && (am.lon || am.lat)) {
       var src = am.target
-        ? "frames/3dvr/" + am.target + ".jpg"
+        ? resolveVRPanoSrc(am.target)
         : VR_MAP.default.src;
       return { src: src, lon: am.lon, lat: am.lat, fov: am.fov || 90 };
     }
@@ -1628,11 +1690,9 @@ loadAll();
     window._VR_SHARED.sphere.material.map = tex;
     window._VR_SHARED.sphere.material.needsUpdate = true;
 
-    var panoKeyMatch = stripVRAssetCacheParams(src).match(
-      /([^\/]+)\.(jpe?g|png|webp|avif)$/i,
-    );
-    if (panoKeyMatch) {
-      window._currentPanoKey = panoKeyMatch[1];
+    var logicalPanoKey = detectVRLogicalPanoKey(src);
+    if (logicalPanoKey) {
+      window._currentPanoKey = logicalPanoKey;
     }
   }
 
@@ -2141,7 +2201,7 @@ loadAll();
           if (!config || config.src === window.VR_MAP_DEFAULT) {
             // Nếu là điểm từ JSON chưa có trong VR_MAP -> Tự tính lon/lat từ px/py
             // targetKey chính là mã PANO (ví dụ: PANO_1_2)
-            var src = "frames/3dvr/" + targetKey + ".jpg";
+            var src = resolveVRPanoSrc(targetKey);
             var lon = (hsPx / 2000) * 360;
             var lat = 90 - (hsPy / 1000) * 180;
             window._vrCurrentRawName = label || targetKey;
@@ -2183,8 +2243,7 @@ loadAll();
   }
   function openVRWithHotspots(name, src, _lon, _lat) {
     window._vrCurrentName = name; // [FIX] Lưu tên pano hiện tại
-    var match = src.match(/PANO_[^.]+/);
-    window._currentPanoKey = match ? match[0] : null;
+    window._currentPanoKey = detectVRLogicalPanoKey(src);
 
     // Xóa hotspot cũ ngay lập tức trước khi load PANO mới
     hsContainer.innerHTML = "";
