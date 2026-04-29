@@ -1306,6 +1306,32 @@ loadAll();
   };
   window.VR_MAP_DEFAULT = VR_MAP["default"].src;
 
+  function stripVRAssetCacheParams(src) {
+    if (!src) return "";
+    var raw = String(src);
+    var hashIndex = raw.indexOf("#");
+    if (hashIndex >= 0) raw = raw.slice(0, hashIndex);
+    var queryIndex = raw.indexOf("?");
+    if (queryIndex >= 0) raw = raw.slice(0, queryIndex);
+    return raw;
+  }
+
+  function getVersionedVRSrc(src) {
+    var normalized = stripVRAssetCacheParams(src);
+    if (!normalized) return "";
+    if (
+      !/^(https?:)?\/\//i.test(normalized) &&
+      normalized.indexOf("./") !== 0 &&
+      normalized.indexOf("/") !== 0
+    ) {
+      normalized = "./" + normalized.replace(/^\/+/, "");
+    }
+    if (typeof window.bdsVersionedAsset === "function") {
+      return window.bdsVersionedAsset(normalized);
+    }
+    return normalized;
+  }
+
   function getVRConfig(name, rawName) {
     // 1. Kiểm tra trong _DYNAMIC_AMENITIES xem có config từ amenityConfig không
     var am = null;
@@ -1428,7 +1454,13 @@ loadAll();
   var _thumbsPreloaded = false;
 
   function getThumbSrc(fullSrc) {
-    return fullSrc.replace("frames/3dvr/", "frames/3dvr/thumb/");
+    var rawFullSrc = stripVRAssetCacheParams(fullSrc).replace(/^\.\//, "");
+    if (rawFullSrc.indexOf("frames/3dvr/") !== 0) {
+      return getVersionedVRSrc(rawFullSrc);
+    }
+    return getVersionedVRSrc(
+      rawFullSrc.replace("frames/3dvr/", "frames/3dvr/thumb/"),
+    );
   }
 
   // ★ Preload TẤT CẢ thumbnail ngay từ đầu — gọi 1 lần khi mở Tiện Ích
@@ -1501,7 +1533,8 @@ loadAll();
       if (idx >= srcList.length) return;
       var src = srcList[idx];
       idx++;
-      if (_texCache[src]) {
+      var fullSrc = getVersionedVRSrc(src);
+      if (_texCache[fullSrc]) {
         // Đã cache → skip, load tiếp ngay
         loadNext();
         return;
@@ -1519,14 +1552,20 @@ loadAll();
 
   // Load ảnh full-res bằng createImageBitmap (off-thread decode)
   function loadFullTexture(src, callback) {
-    if (_texCache[src]) {
-      callback(_texCache[src]);
+    var fullSrc = getVersionedVRSrc(src);
+    if (!fullSrc) {
+      callback && callback(null);
+      return;
+    }
+
+    if (_texCache[fullSrc]) {
+      callback(_texCache[fullSrc]);
       return;
     }
 
     // Ưu tiên fetch + createImageBitmap (decode off main thread)
     if (typeof createImageBitmap === "function" && typeof fetch === "function") {
-      fetch(src)
+      fetch(fullSrc)
         .then(function (r) { return r.blob(); })
         .then(function (blob) { return createImageBitmap(blob, { imageOrientation: "flipY" }); })
         .then(function (bmp) {
@@ -1537,35 +1576,50 @@ loadAll();
           var maxAniso = window._VR_SHARED.renderer.capabilities.getMaxAnisotropy();
           tex.anisotropy = IS_MOBILE ? Math.min(maxAniso, 4) : maxAniso;
           tex.needsUpdate = true;
-          _texCache[src] = tex;
+          _texCache[fullSrc] = tex;
           callback(tex);
         })
         .catch(function () {
           // Fallback: dùng THREE.TextureLoader
           var loader = new THREE.TextureLoader();
-          loader.load(src, function (tex) {
-            tex.minFilter = THREE.LinearFilter;
-            tex.magFilter = THREE.LinearFilter;
-            tex.generateMipmaps = false;
-            tex.needsUpdate = true;
-            _texCache[src] = tex;
-            callback(tex);
-          });
+          loader.load(
+            fullSrc,
+            function (tex) {
+              tex.minFilter = THREE.LinearFilter;
+              tex.magFilter = THREE.LinearFilter;
+              tex.generateMipmaps = false;
+              tex.needsUpdate = true;
+              _texCache[fullSrc] = tex;
+              callback(tex);
+            },
+            undefined,
+            function () {
+              callback(null);
+            },
+          );
         });
     } else {
       var loader = new THREE.TextureLoader();
-      loader.load(src, function (tex) {
-        tex.minFilter = THREE.LinearFilter;
-        tex.magFilter = THREE.LinearFilter;
-        tex.generateMipmaps = false;
-        tex.needsUpdate = true;
-        _texCache[src] = tex;
-        callback(tex);
-      });
+      loader.load(
+        fullSrc,
+        function (tex) {
+          tex.minFilter = THREE.LinearFilter;
+          tex.magFilter = THREE.LinearFilter;
+          tex.generateMipmaps = false;
+          tex.needsUpdate = true;
+          _texCache[fullSrc] = tex;
+          callback(tex);
+        },
+        undefined,
+        function () {
+          callback(null);
+        },
+      );
     }
   }
 
   function applyTexture(tex, src) {
+    if (!tex) return;
     // Dispose texture cũ (chỉ nếu không trong cache)
     var oldTex = window._VR_SHARED.sphere.material.map;
     if (oldTex && oldTex !== tex && !Object.values(_texCache).includes(oldTex) && !Object.values(_thumbTexCache).includes(oldTex)) {
@@ -1574,7 +1628,9 @@ loadAll();
     window._VR_SHARED.sphere.material.map = tex;
     window._VR_SHARED.sphere.material.needsUpdate = true;
 
-    var panoKeyMatch = src.match(/([^\/]+)\.jpg$/);
+    var panoKeyMatch = stripVRAssetCacheParams(src).match(
+      /([^\/]+)\.(jpe?g|png|webp|avif)$/i,
+    );
     if (panoKeyMatch) {
       window._currentPanoKey = panoKeyMatch[1];
     }
@@ -1618,20 +1674,21 @@ loadAll();
     }
 
     // ★ PROGRESSIVE LOADING v2:
+    var fullSrc = getVersionedVRSrc(src);
     var thumbSrc = getThumbSrc(src);
 
-    if (_texCache[src]) {
+    if (_texCache[fullSrc]) {
       // 1. Full đã cache → instant
-      applyTexture(_texCache[src], src);
+      applyTexture(_texCache[fullSrc], fullSrc);
     } else {
       // 2. Hiện thumb ngay (đã preload sẵn hoặc load nhanh)
       if (_thumbTexCache[thumbSrc]) {
-        applyTexture(_thumbTexCache[thumbSrc], src);
+        applyTexture(_thumbTexCache[thumbSrc], fullSrc);
       }
       // 3. Load full-res off-thread
       loadFullTexture(src, function (fullTex) {
         if (thisLoad.cancelled) return;
-        applyTexture(fullTex, src);
+        applyTexture(fullTex, fullSrc);
       });
     }
 
@@ -1662,8 +1719,8 @@ loadAll();
       var targetName = hs.target || key;
       var targetConfig = VR_MAP[targetName] || VR_MAP[key];
       if (!targetConfig) return;
-      var targetSrc = targetConfig.src;
-      if (!_texCache[targetSrc]) queue.push(targetSrc);
+      var targetSrc = getVersionedVRSrc(targetConfig.src);
+      if (!_texCache[targetSrc]) queue.push(targetConfig.src);
     });
     // Load từng cái, cách nhau 500ms để không chiếm hết bandwidth
     queue.forEach(function (qSrc, i) {

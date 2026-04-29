@@ -1290,6 +1290,19 @@ function preload_collect_media_targets(string $root, string $versionTag): array
 {
     $paths = [];
 
+    $vrConfigPath = $root . '/data/vr_config.json';
+    if (is_file($vrConfigPath)) {
+        $vrConfig = json_decode((string)file_get_contents($vrConfigPath), true);
+        if (is_array($vrConfig)) {
+            foreach ($vrConfig as $entry) {
+                if (!is_array($entry) || empty($entry['src']) || !is_string($entry['src'])) {
+                    continue;
+                }
+                $paths[] = $entry['src'];
+            }
+        }
+    }
+
     $libraryPath = $root . '/data/library.json';
     if (is_file($libraryPath)) {
         $library = json_decode((string)file_get_contents($libraryPath), true);
