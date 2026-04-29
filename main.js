@@ -1487,6 +1487,7 @@ loadAll();
   var _texCache = {};
   var _thumbTexCache = {};
   var _thumbImgCache = {};  // Raw Image objects cho thumb
+  var _thumbLoadingMap = {};
   var _loadingAbort = null;
   var _thumbsPreloaded = false;
 
@@ -1514,74 +1515,106 @@ loadAll();
     });
 
     var srcList = Object.keys(allSrcs);
-    var thumbsDone = 0;
+    var queue = srcList.slice();
+    var concurrent = IS_MOBILE ? 2 : 4;
+    var active = 0;
 
-    srcList.forEach(function (src) {
-      var thumbSrc = getThumbSrc(src);
-      if (_thumbImgCache[thumbSrc]) {
-        thumbsDone++;
-        return;
+    function pump() {
+      while (active < concurrent && queue.length) {
+        var src = queue.shift();
+        var thumbSrc = getThumbSrc(src);
+        if (_thumbImgCache[thumbSrc] || _thumbLoadingMap[thumbSrc]) {
+          continue;
+        }
+
+        active++;
+        _thumbLoadingMap[thumbSrc] = true;
+
+        (function (resolvedThumbSrc) {
+          var img = new Image();
+          img.crossOrigin = "anonymous";
+          img.decoding = "async";
+          img.onload = function () {
+            _thumbImgCache[resolvedThumbSrc] = img;
+            delete _thumbLoadingMap[resolvedThumbSrc];
+            active--;
+            pump();
+          };
+          img.onerror = function () {
+            delete _thumbLoadingMap[resolvedThumbSrc];
+            active--;
+            pump();
+          };
+          img.src = resolvedThumbSrc;
+        })(thumbSrc);
       }
+    }
 
-      var img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = function () {
-        _thumbImgCache[thumbSrc] = img;
-        // Tạo texture sẵn luôn
-        if (typeof createImageBitmap === "function") {
-          createImageBitmap(img, { imageOrientation: "flipY" }).then(function (bmp) {
-            var tex = new THREE.Texture(bmp);
-            tex.minFilter = THREE.LinearFilter;
-            tex.magFilter = THREE.LinearFilter;
-            tex.generateMipmaps = false;
-            tex.needsUpdate = true;
-            _thumbTexCache[thumbSrc] = tex;
-          });
-        } else {
-          var tex = new THREE.Texture(img);
-          tex.minFilter = THREE.LinearFilter;
-          tex.magFilter = THREE.LinearFilter;
-          tex.generateMipmaps = false;
-          tex.needsUpdate = true;
-          _thumbTexCache[thumbSrc] = tex;
-        }
-
-        thumbsDone++;
-        // ★ Khi tất cả thumb xong → bắt đầu preload full-res ngầm
-        if (thumbsDone >= srcList.length) {
-          preloadAllFull(srcList);
-        }
-      };
-      img.onerror = function () {
-        thumbsDone++;
-        if (thumbsDone >= srcList.length) {
-          preloadAllFull(srcList);
-        }
-      };
-      img.src = thumbSrc;
-    });
+    pump();
   }
 
-  // ★ Preload TẤT CẢ full-res ngầm — chạy sau khi thumb xong
-  // Load lần lượt, cách nhau 300ms để không chiếm hết bandwidth
-  function preloadAllFull(srcList) {
-    var idx = 0;
-    function loadNext() {
-      if (idx >= srcList.length) return;
-      var src = srcList[idx];
-      idx++;
-      var fullSrc = getVersionedVRSrc(src);
-      if (_texCache[fullSrc]) {
-        // Đã cache → skip, load tiếp ngay
-        loadNext();
-        return;
-      }
-      loadFullTexture(src, function () {
-        setTimeout(loadNext, 300);
-      });
+  function buildThumbTexture(img) {
+    if (!img) return null;
+    var tex = new THREE.Texture(img);
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    tex.generateMipmaps = false;
+    tex.needsUpdate = true;
+    return tex;
+  }
+
+  function loadThumbTexture(src, callback) {
+    var thumbSrc = getThumbSrc(src);
+    if (_thumbTexCache[thumbSrc]) {
+      callback && callback(_thumbTexCache[thumbSrc]);
+      return;
     }
-    // Bắt đầu sau 1s để không tranh bandwidth với ảnh đang xem
-    setTimeout(loadNext, 1000);
+
+    if (_thumbImgCache[thumbSrc]) {
+      var readyTex = buildThumbTexture(_thumbImgCache[thumbSrc]);
+      if (readyTex) _thumbTexCache[thumbSrc] = readyTex;
+      callback && callback(readyTex);
+      return;
+    }
+
+    if (_thumbLoadingMap[thumbSrc]) {
+      var waitStart = Date.now();
+      (function waitThumb() {
+        if (_thumbTexCache[thumbSrc]) {
+          callback && callback(_thumbTexCache[thumbSrc]);
+          return;
+        }
+        if (_thumbImgCache[thumbSrc]) {
+          var cachedTex = buildThumbTexture(_thumbImgCache[thumbSrc]);
+          if (cachedTex) _thumbTexCache[thumbSrc] = cachedTex;
+          callback && callback(cachedTex);
+          return;
+        }
+        if (Date.now() - waitStart > 2500) {
+          callback && callback(null);
+          return;
+        }
+        setTimeout(waitThumb, 60);
+      })();
+      return;
+    }
+
+    _thumbLoadingMap[thumbSrc] = true;
+    var img = new Image();
+    img.crossOrigin = "anonymous";
+    img.decoding = "async";
+    img.onload = function () {
+      _thumbImgCache[thumbSrc] = img;
+      delete _thumbLoadingMap[thumbSrc];
+      var tex = buildThumbTexture(img);
+      if (tex) _thumbTexCache[thumbSrc] = tex;
+      callback && callback(tex);
+    };
+    img.onerror = function () {
+      delete _thumbLoadingMap[thumbSrc];
+      callback && callback(null);
+    };
+    img.src = thumbSrc;
   }
 
   // ★ Expose để gọi từ ngoài khi mở tab Tiện Ích
@@ -1710,16 +1743,15 @@ loadAll();
 
     // ★ PROGRESSIVE LOADING v2:
     var fullSrc = getVersionedVRSrc(src);
-    var thumbSrc = getThumbSrc(src);
-
     if (_texCache[fullSrc]) {
       // 1. Full đã cache → instant
       applyTexture(_texCache[fullSrc], fullSrc);
     } else {
-      // 2. Hiện thumb ngay (đã preload sẵn hoặc load nhanh)
-      if (_thumbTexCache[thumbSrc]) {
-        applyTexture(_thumbTexCache[thumbSrc], fullSrc);
-      }
+      // 2. Hiện thumb nhẹ trước, chỉ tạo texture khi thực sự mở pano
+      loadThumbTexture(src, function (thumbTex) {
+        if (thisLoad.cancelled || _texCache[fullSrc]) return;
+        if (thumbTex) applyTexture(thumbTex, fullSrc);
+      });
       // 3. Load full-res off-thread
       loadFullTexture(src, function (fullTex) {
         if (thisLoad.cancelled) return;
@@ -1745,6 +1777,7 @@ loadAll();
   // ★ Preload full-res pano lân cận (không chỉ thumb)
   function preloadNearbyFull(cleanName, rawName) {
     if (!window._VR_HOTSPOT_MAP) return;
+    if (IS_MOBILE) return;
     var hsConfig = window._VR_HOTSPOT_MAP[cleanName] || window._VR_HOTSPOT_MAP[rawName];
     if (!hsConfig) return;
     var queue = [];
@@ -1757,10 +1790,14 @@ loadAll();
       var targetSrc = getVersionedVRSrc(targetConfig.src);
       if (!_texCache[targetSrc]) queue.push(targetConfig.src);
     });
+    queue = queue.filter(function (src, index, arr) {
+      return arr.indexOf(src) === index;
+    }).slice(0, 2);
     // Load từng cái, cách nhau 500ms để không chiếm hết bandwidth
     queue.forEach(function (qSrc, i) {
       setTimeout(function () {
-        if (_texCache[qSrc]) return;
+        var versionedSrc = getVersionedVRSrc(qSrc);
+        if (_texCache[versionedSrc]) return;
         loadFullTexture(qSrc, function () {});
       }, i * 500);
     });
