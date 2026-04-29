@@ -1452,7 +1452,7 @@ loadAll();
       antialias: !IS_MOBILE,
     });
     window._VR_SHARED.renderer.setPixelRatio(
-  Math.min(window.devicePixelRatio || 1, 2),
+  IS_MOBILE ? 1 : Math.min(window.devicePixelRatio || 1, 2),
 );
 
     window._VR_SHARED.scene = new THREE.Scene();
@@ -1461,8 +1461,8 @@ loadAll();
     window._VR_SHARED.camera.position.set(0, 0, 0);
 
     // ★ Mobile: giảm segments để giảm tải GPU
-    var segs = IS_MOBILE ? 64 : 128;
-    var segsV = IS_MOBILE ? 32 : 64;
+    var segs = IS_MOBILE ? 40 : 128;
+    var segsV = IS_MOBILE ? 20 : 64;
     const geo = new THREE.SphereGeometry(1000, segs, segsV);
 
     const mat = new THREE.MeshBasicMaterial({
@@ -1490,6 +1490,7 @@ loadAll();
   var _thumbLoadingMap = {};
   var _loadingAbort = null;
   var _thumbsPreloaded = false;
+  var MOBILE_VR_FULLRES_ENABLED = false;
 
   function getThumbSrc(fullSrc) {
     var rawFullSrc = stripVRAssetCacheParams(fullSrc).replace(/^\.\//, "");
@@ -1633,11 +1634,16 @@ loadAll();
       return;
     }
 
+    if (IS_MOBILE && !MOBILE_VR_FULLRES_ENABLED) {
+      callback && callback(null);
+      return;
+    }
+
     // Ưu tiên fetch + createImageBitmap (decode off main thread)
     if (typeof createImageBitmap === "function" && typeof fetch === "function") {
       fetch(fullSrc)
         .then(function (r) { return r.blob(); })
-        .then(function (blob) { return createImageBitmap(blob, { imageOrientation: "flipY" }); })
+        .then(function (blob) { return createImageBitmap(blob, { imageOrientation: IS_MOBILE ? "none" : "flipY" }); })
         .then(function (bmp) {
           var tex = new THREE.Texture(bmp);
           tex.minFilter = THREE.LinearFilter;
@@ -1752,11 +1758,13 @@ loadAll();
         if (thisLoad.cancelled || _texCache[fullSrc]) return;
         if (thumbTex) applyTexture(thumbTex, fullSrc);
       });
-      // 3. Load full-res off-thread
-      loadFullTexture(src, function (fullTex) {
-        if (thisLoad.cancelled) return;
-        applyTexture(fullTex, fullSrc);
-      });
+      // 3. Desktop mới tự nâng lên full-res; mobile giữ thumb 2048x1024 để tránh lật dọc và quá tải GPU
+      if (!IS_MOBILE || MOBILE_VR_FULLRES_ENABLED) {
+        loadFullTexture(src, function (fullTex) {
+          if (thisLoad.cancelled) return;
+          applyTexture(fullTex, fullSrc);
+        });
+      }
     }
 
     // Hiện modal
