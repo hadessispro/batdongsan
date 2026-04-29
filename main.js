@@ -1005,7 +1005,7 @@ loadAll();
               // Fallback
               window.openVR360(
                 name,
-                window.VR_MAP_DEFAULT || "frames/3dvr/PANO_16_3.jpg",
+                window.VR_MAP_DEFAULT || "frames/3dvr/PANO_16_4.jpg",
                 0,
                 0,
               );
@@ -1036,208 +1036,208 @@ loadAll();
 
   // ── Map tiện ích → file ảnh PANO 360° ─────────────────────
   // File PANO nằm trong frames/3dvr/ với tên dùng underscore
-  const PANO_DEFAULT = "frames/3dvr/PANO_16_3.jpg";
+  const PANO_DEFAULT = "frames/3dvr/PANO_16_4.jpg";
   const VR_MAP = {
     "Cổng Dự Án": {
-      src: "frames/3dvr/PANO_03_3.jpg",
+      src: "frames/3dvr/PANO_03_4.jpg",
       lon: -152,
       lat: 13,
       fov: 55,
     },
     "Đài Phun Nước": {
-      src: "frames/3dvr/PANO_04_3.jpg",
+      src: "frames/3dvr/PANO_04_4.jpg",
       lon: -12,
       lat: -4,
       fov: 50,
     },
     "Trung Tâm Thương Mại 1": {
-      src: "frames/3dvr/PANO_03_3.jpg",
+      src: "frames/3dvr/PANO_03_4.jpg",
       lon: -191,
       lat: 17,
       fov: 60,
     },
     "Trạm Sạc Xe Điện": {
-      src: "frames/3dvr/PANO_04_3.jpg",
+      src: "frames/3dvr/PANO_04_4.jpg",
       lon: 104,
       lat: -32,
       fov: 90,
     },
     "Bãi Đỗ Xe 1": {
-      src: "frames/3dvr/PANO_04_3.jpg",
+      src: "frames/3dvr/PANO_04_4.jpg",
       lon: 46,
       lat: -9,
       fov: 45,
     },
     "Quảng Trường Cây Xanh": {
-      src: "frames/3dvr/PANO_05_3.jpg",
+      src: "frames/3dvr/PANO_05_4.jpg",
       lon: 62,
       lat: -64,
       fov: 90,
     },
     "Sân Bóng Đá": {
-      src: "frames/3dvr/PANO_05_3.jpg",
+      src: "frames/3dvr/PANO_05_4.jpg",
       lon: 202,
       lat: -12,
       fov: 45,
     },
     "Hồ Bơi Vô Cực": {
-  src: "frames/3dvr/PANO_12_3.jpg",
+  src: "frames/3dvr/PANO_12_4.jpg",
   lon: 177,
   lat: -36,
   fov: 115,
 },
     "Gym Ngoài Trời": {
-      src: "frames/3dvr/PANO_05_3.jpg",
+      src: "frames/3dvr/PANO_05_4.jpg",
       lon: 94,
       lat: -26,
       fov: 35,
     },
     "Khu Vui Chơi Trẻ Em": {
-      src: "frames/3dvr/PANO_05_3.jpg",
+      src: "frames/3dvr/PANO_05_4.jpg",
       lon: 19,
       lat: -25,
       fov: 40,
     },
     "Ghế Nghỉ": {
-      src: "frames/3dvr/PANO_05_3.jpg",
+      src: "frames/3dvr/PANO_05_4.jpg",
       lon: -86,
       lat: -32,
       fov: 45,
     },
     "Vườn Tri Thức": {
-      src: "frames/3dvr/PANO_05_3.jpg",
+      src: "frames/3dvr/PANO_05_4.jpg",
       lon: 67,
       lat: -20,
       fov: 45,
     },
     "Bàn Đá Chơi Cờ": {
-      src: "frames/3dvr/PANO_05_3.jpg",
+      src: "frames/3dvr/PANO_05_4.jpg",
       lon: 184,
       lat: -36,
       fov: 45,
     },
     "Hồ Vọng Nguyệt": {
-      src: "frames/3dvr/PANO_05_3.jpg",
+      src: "frames/3dvr/PANO_05_4.jpg",
       lon: 131,
       lat: -14,
       fov: 35,
     },
     "Khán Đài Mini": {
-      src: "frames/3dvr/PANO_05_3.jpg",
+      src: "frames/3dvr/PANO_05_4.jpg",
       lon: -113,
       lat: -12,
       fov: 50,
     },
     "Khu Nướng BBQ": {
-      src: "frames/3dvr/PANO_07_4.jpg",
+      src: "frames/3dvr/PANO_07_5.jpg",
       lon: -76,
       lat: -41,
       fov: 35,
     },
     "Vườn Dưỡng Sinh": {
-      src: "frames/3dvr/PANO_07_4.jpg",
+      src: "frames/3dvr/PANO_07_5.jpg",
       lon: 6,
       lat: -38,
       fov: 45,
     },
     "Vườn Thảo Mộc": {
-      src: "frames/3dvr/PANO_07_4.jpg",
+      src: "frames/3dvr/PANO_07_5.jpg",
       lon: 100,
       lat: -39,
       fov: 35,
     },
     "Khu Camping": {
-      src: "frames/3dvr/PANO_07_4.jpg",
+      src: "frames/3dvr/PANO_07_5.jpg",
       lon: 187,
       lat: -46,
       fov: 40,
     },
     "Trường Mầm Non": {
-      src: "frames/3dvr/PANO_06_3.jpg",
+      src: "frames/3dvr/PANO_06_4.jpg",
       lon: -122,
       lat: -3,
       fov: 35,
     },
     "Sân Bóng Rổ 1": {
-      src: "frames/3dvr/PANO_08_4.jpg",
+      src: "frames/3dvr/PANO_08_5.jpg",
       lon: -10,
       lat: -11,
       fov: 40,
     },
     "Sân Bóng Rổ 2": {
-      src: "frames/3dvr/PANO_08_4.jpg",
+      src: "frames/3dvr/PANO_08_5.jpg",
       lon: -1,
       lat: -4,
       fov: 55,
     },
     "Bãi Đỗ Xe 2": {
-      src: "frames/3dvr/PANO_08_4.jpg",
+      src: "frames/3dvr/PANO_08_5.jpg",
       lon: 107,
       lat: -10,
       fov: 75,
     },
     "Sân Pickleball 1": {
-      src: "frames/3dvr/PANO_08_4.jpg",
+      src: "frames/3dvr/PANO_08_5.jpg",
       lon: -156,
       lat: -5,
       fov: 55,
     },
     "Sân Pickleball 2": {
-      src: "frames/3dvr/PANO_09_3.jpg",
+      src: "frames/3dvr/PANO_09_4.jpg",
       lon: -143,
       lat: 1,
       fov: 30,
     },
     "Bãi Đỗ Xe 3": {
-      src: "frames/3dvr/PANO_09_3.jpg",
+      src: "frames/3dvr/PANO_09_4.jpg",
       lon: 189,
       lat: 1,
       fov: 40,
     },
     "Nhà Sinh Hoạt Cộng Đồng": {
-      src: "frames/3dvr/PANO_14_3.jpg",
+      src: "frames/3dvr/PANO_14_4.jpg",
       lon: 275,
       lat: -2,
       fov: 75,
     },
     "Trung Tâm Thương Mại 2": {
-      src: "frames/3dvr/PANO_13_3.jpg",
+      src: "frames/3dvr/PANO_13_4.jpg",
       lon: -293,
       lat: -14,
       fov: 65,
     },
     "Bể Bơi 1 Chân Toà Nhà Hỗn Hợp": {
-      src: "frames/3dvr/PANO_12_3.jpg",
+      src: "frames/3dvr/PANO_12_4.jpg",
       lon: 177,
       lat: -36,
       fov: 115,
     },
     "Bể Bơi 2 Chân Toà Nhà Hỗn Hợp": {
-      src: "frames/3dvr/PANO_13_3.jpg",
+      src: "frames/3dvr/PANO_13_4.jpg",
       lon: 180,
       lat: -54,
       fov: 65,
     },
     "Công Viên Cây Xanh": {
-      src: "frames/3dvr/PANO_13_3.jpg",
+      src: "frames/3dvr/PANO_13_4.jpg",
       lon: -27,
       lat: -34,
       fov: 80,
     },
     "Siêu Thị Khối Đế": {
-      src: "frames/3dvr/PANO_11_3.jpg",
+      src: "frames/3dvr/PANO_11_4.jpg",
       lon: 0,
       lat: 0,
       fov: 90,
     },
     "Spa Khối Đế": {
-      src: "frames/3dvr/PANO_11_3.jpg",
+      src: "frames/3dvr/PANO_11_4.jpg",
       lon: -220,
       lat: 1,
       fov: 60,
     },
     "Cafe - Restaurant Khối Đế": {
-      src: "frames/3dvr/PANO_11_3.jpg",
+      src: "frames/3dvr/PANO_11_4.jpg",
       lon: -85,
       lat: 12,
       fov: 60,
@@ -1255,19 +1255,19 @@ loadAll();
       fov: 85,
     },
     "Đài Vọng Cảnh 1": {
-      src: "frames/3dvr/PANO_15_3.jpg",
+      src: "frames/3dvr/PANO_15_4.jpg",
       lon: 209,
       lat: 4,
       fov: 30,
     },
     "Đài Vọng Cảnh 2": {
-      src: "frames/3dvr/PANO_16_3.jpg",
+      src: "frames/3dvr/PANO_16_4.jpg",
       lon: -164,
       lat: 0,
       fov: 55,
     },
     "Đài Vọng Cảnh 3": {
-      src: "frames/3dvr/PANO_16_3.jpg",
+      src: "frames/3dvr/PANO_16_4.jpg",
       lon: 198,
       lat: -3,
       fov: 40,
@@ -1279,13 +1279,13 @@ loadAll();
       fov: 90,
     },
     "Thềm Viễn Cảnh 1": {
-      src: "frames/3dvr/PANO_15_3.jpg",
+      src: "frames/3dvr/PANO_15_4.jpg",
       lon: 175,
       lat: -1,
       fov: 85,
     },
     "Thềm Viễn Cảnh 2": {
-      src: "frames/3dvr/PANO_16_3.jpg",
+      src: "frames/3dvr/PANO_16_4.jpg",
       lon: 0,
       lat: 0,
       fov: 90,
@@ -1297,44 +1297,18 @@ loadAll();
     //   fov: 30,
     // },
     "Điểm Nhấn Ánh Dương": {
-      src: "frames/3dvr/PANO_12_3.jpg",
+      src: "frames/3dvr/PANO_12_4.jpg",
       lon: -51,
       lat: -20,
       fov: 30,
     },
-    default: { src: "frames/3dvr/PANO_16_3.jpg", lon: 0, lat: 0, fov: 90 },
+    default: { src: "frames/3dvr/PANO_16_4.jpg", lon: 0, lat: 0, fov: 90 },
   };
-  const VR_PANO_FILE_ALIASES = {
-    PANO_03_3: "PANO_03_4.jpg",
-    PANO_04_3: "PANO_04_4.jpg",
-    PANO_05_3: "PANO_05_4.jpg",
-    PANO_06_3: "PANO_06_4.jpg",
-    PANO_07_4: "PANO_07_5.jpg",
-    PANO_08_4: "PANO_08_5.jpg",
-    PANO_09_3: "PANO_09_4.jpg",
-    PANO_10_3: "PANO_10_4.jpg",
-    PANO_11_3: "PANO_11_4.jpg",
-    PANO_12_3: "PANO_12_4.jpg",
-    PANO_13_3: "PANO_13_4.jpg",
-    PANO_14_3: "PANO_14_4.jpg",
-    PANO_15_3: "PANO_15_4.jpg",
-    PANO_16_3: "PANO_16_4.jpg",
-  };
-
   function resolveVRPanoSrc(input) {
     if (!input) return "";
     var raw = String(input).replace(/^\.?\//, "");
     if (/^PANO_[^./?#]+$/i.test(raw)) {
-      return (
-        "frames/3dvr/" +
-        (VR_PANO_FILE_ALIASES[raw] || raw + ".jpg")
-      );
-    }
-    var logicalMatch = raw.match(
-      /(?:^|\/)(PANO_[^\/?#]+)\.(jpe?g|png|webp|avif)$/i,
-    );
-    if (logicalMatch && VR_PANO_FILE_ALIASES[logicalMatch[1]]) {
-      return "frames/3dvr/" + VR_PANO_FILE_ALIASES[logicalMatch[1]];
+      return "frames/3dvr/" + raw + ".jpg";
     }
     return raw;
   }
@@ -1350,13 +1324,6 @@ loadAll();
 
     var byPathMatch = raw.match(/(?:^|\/)(PANO_[^\/?#]+)\.(jpe?g|png|webp|avif)$/i);
     if (!byPathMatch) return null;
-
-    var fileName = byPathMatch[0].split("/").pop().toUpperCase();
-    for (var logicalKey in VR_PANO_FILE_ALIASES) {
-      if (VR_PANO_FILE_ALIASES[logicalKey].toUpperCase() === fileName) {
-        return logicalKey;
-      }
-    }
     return byPathMatch[1];
   }
 
@@ -2295,19 +2262,19 @@ loadAll();
   var PANO_POSITIONS = {
     PANO_1_2: { top: 28, left: 62 },
     PANO_02_3: { top: 88.4, left: 15.7 },
-    PANO_03_3: { top: 43.7, left: 8.3 },
-    PANO_04_3: { top: 27.4, left: 13.4 },
-    PANO_05_3: { top: 23.2, left: 24.5 },
-    PANO_06_3: { top: 14.2, left: 36.6 },
-    PANO_07_4: { top: 23.7, left: 40.3 },
-    PANO_08_4: { top: 23.2, left: 44.9 },
-    PANO_09_3: { top: 34.7, left: 69 },
-    PANO_11_3: { top: 68.4, left: 93.1 },
-    PANO_12_3: { top: 67.9, left: 86.1 },
-    PANO_13_3: { top: 45.8, left: 79.2 },
-    PANO_14_3: { top: 40, left: 96.8 },
-    PANO_15_3: { top: 88.4, left: 37.5 },
-    PANO_16_3: { top: 77.4, left: 89.4 },
+    PANO_03_4: { top: 43.7, left: 8.3 },
+    PANO_04_4: { top: 27.4, left: 13.4 },
+    PANO_05_4: { top: 23.2, left: 24.5 },
+    PANO_06_4: { top: 14.2, left: 36.6 },
+    PANO_07_5: { top: 23.7, left: 40.3 },
+    PANO_08_5: { top: 23.2, left: 44.9 },
+    PANO_09_4: { top: 34.7, left: 69 },
+    PANO_11_4: { top: 68.4, left: 93.1 },
+    PANO_12_4: { top: 67.9, left: 86.1 },
+    PANO_13_4: { top: 45.8, left: 79.2 },
+    PANO_14_4: { top: 40, left: 96.8 },
+    PANO_15_4: { top: 88.4, left: 37.5 },
+    PANO_16_4: { top: 77.4, left: 89.4 },
     PANO_17: { top: 90, left: 30 },
     default: { top: 45, left: 50 },
   };
@@ -4834,3 +4801,4 @@ loadAll();
 
   panel.style.cursor = "grab";
 })();
+
