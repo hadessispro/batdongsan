@@ -1672,7 +1672,7 @@ loadAll();
       resizeWidth: targetWidth,
       resizeHeight: Math.round(targetWidth / 2),
       resizeQuality: "high",
-      imageOrientation: "none",
+      imageOrientation: "flipY",
     };
   }
 
